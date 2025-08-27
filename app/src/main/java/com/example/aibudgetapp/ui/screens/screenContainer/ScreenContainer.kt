@@ -30,7 +30,10 @@ fun ScreenContainer(userName: String) {
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (screenContainerViewModel.currentScreen) {
                     Screen.HOME -> HomeScreen(userName = userName)
-                    Screen.ADDTRANSACTION -> AddTransactionScreen()
+                    Screen.ADDTRANSACTION -> AddTransactionScreen(
+                        onAddTransaction = {amount, category -> screenContainerViewModel.addTransaction(amount, category) },
+                        AddTransactionError = screenContainerViewModel.addTransactionError
+                    )
                     Screen.SETTINGS -> SettingsScreen()
                 }
             }
