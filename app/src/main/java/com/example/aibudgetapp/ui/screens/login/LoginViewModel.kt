@@ -1,28 +1,26 @@
 package com.example.aibudgetapp.ui.screens.login
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class LoginViewModel : ViewModel() {
-    var isLoggedIn by mutableStateOf(false)
-        private set
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
-    var loginError by mutableStateOf(false)
-        private set
+    private val _loginError = MutableStateFlow(false)
+    val loginError: StateFlow<Boolean> = _loginError
 
-    var userName by mutableStateOf("") // after Login, save userName
-        private set
+    private val _userName = MutableStateFlow("")
+    val userName: StateFlow<String> = _userName
 
     fun login(id: String, password: String) {
-        //TODO: Change this code to actual login
         if (id == "admin" && password == "1234") {
-            isLoggedIn = true
-            loginError = false
-            userName = id //TODO: Change this to username
+            _isLoggedIn.value = true
+            _loginError.value = false
+            _userName.value = id
         } else {
-            loginError = true
+            _loginError.value = true
         }
     }
 }
