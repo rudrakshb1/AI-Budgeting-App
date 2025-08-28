@@ -7,6 +7,14 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import com.example.aibudgetapp.ui.screens.login.*
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainer
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+
 
 class MainActivity : ComponentActivity() {
 
