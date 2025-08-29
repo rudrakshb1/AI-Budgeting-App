@@ -1,25 +1,38 @@
-package com.example.aibudgetapp.ui.screens.login
+package com.example.aibudgetapp.ui.screens.registration
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.aibudgetapp.ui.screens.home.HomeScreen
 
 @Composable
-fun LoginScreen(
-    onLogin: (String, String) -> Unit,
-    onRegister: () -> Unit,
-    loginError: Boolean
+fun RegistrationScreen(
+    onRegister: (String, String) -> Unit,
+    onCancel: () -> Unit,
+    registrationError: Boolean
+
 ) {
-    var id by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
@@ -29,9 +42,9 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         OutlinedTextField(
-            value = id,
-            onValueChange = { id = it },
-            label = { Text("Username") },
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -45,12 +58,12 @@ fun LoginScreen(
         )
 
         Button(
-            onClick = { onLogin(id, password) },
+            onClick = { onRegister(email, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
-            Text("Login")
+            Text("Register")
         }
         Row(
             modifier = Modifier
@@ -58,31 +71,24 @@ fun LoginScreen(
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
-
         ) {
-            Text("Don't have an account?")
+            Text("have an account?")
             Spacer(Modifier.width(6.dp))
-            TextButton(onClick = onRegister) {
-                Text("Register")
+            TextButton(onClick = onCancel) {
+                Text("Login")
             }
-            }
-
-        if (loginError) {
+        }
+        if (registrationError) {
             Text(
-                text = "Login Failed",
+                text = "Registration Failed",
                 color = Color.Red,
                 modifier = Modifier.padding(top = 16.dp)
             )
         }
+
+
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginPreview() {
-    LoginScreen(
-        onLogin = { id, pw ->  },
-        onRegister = {  },
-        loginError = false
-    )
-}
+
+
