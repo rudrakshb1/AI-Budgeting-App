@@ -13,25 +13,47 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
+import com.example.aibudgetapp.ui.screens.registration.RegistrationScreen
+import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 
 
 class MainActivity : ComponentActivity() {
 
     private val loginViewModel by viewModels<LoginViewModel>()
+    private val registrationViewModel by viewModels<RegistrationViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
+            var showRegister by remember { mutableStateOf(false) }
+
             val isLoggedIn by remember { derivedStateOf { loginViewModel.isLoggedIn } } //default: false
             val loginError by remember { derivedStateOf { loginViewModel.loginError } } //default: false
             val userName by remember { derivedStateOf { loginViewModel.userName } } //default: ""
 
+            val isRegistered = registrationViewModel.isRegistered
+            val registrationError = registrationViewModel.registerError
+
+            LaunchedEffect(isRegistered) {
+                if (isRegistered) {
+                    showRegister = false
+                    registrationViewModel.consumeRegistrationSuccess()
+                }
+            }
+
             if (isLoggedIn) {
                 ScreenContainer( userName = userName) //open main page if loggedIn
+            } else if (showRegister) {
+                RegistrationScreen(
+                    onRegister = { email, password -> registrationViewModel.register(email, password) },
+                    onCancel = { showRegister = false },
+                    registrationError = registrationError
+                )
             } else {
                 LoginScreen( //open LoginScreen if not loggedIn
                     onLogin = { id, password -> loginViewModel.login(id, password) },
+                    onRegister = {showRegister=true},
                     loginError = loginError
                 )
             }
