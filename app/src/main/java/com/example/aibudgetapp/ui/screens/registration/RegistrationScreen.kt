@@ -29,8 +29,7 @@ import androidx.compose.ui.unit.dp
 fun RegistrationScreen(
     onRegister: (String, String) -> Unit,
     onCancel: () -> Unit,
-    registrationError: Boolean,
-    registrationErrorMessage: String?
+    registrationError: Boolean
 
 ) {
     var email by remember { mutableStateOf("") }
@@ -66,13 +65,6 @@ fun RegistrationScreen(
         ) {
             Text("Register")
         }
-        if (registrationError) {
-            Text(
-                text = registrationErrorMessage ?: "Registration failed",
-                color = Color.Red,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -86,6 +78,15 @@ fun RegistrationScreen(
                 Text("Login")
             }
         }
+        if (registrationError) {
+            Text(
+                text = "Registration Failed",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+
+
     }
 }
 

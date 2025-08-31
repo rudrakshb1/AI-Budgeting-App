@@ -17,11 +17,9 @@ import com.example.aibudgetapp.ui.screens.home.HomeScreen
 fun LoginScreen(
     onLogin: (String, String) -> Unit,
     onRegister: () -> Unit,
-    loginError: Boolean,
-    loginErrorMessage: String?,
-    onClearError: () -> Unit = {}
+    loginError: Boolean
 ) {
-    var email by remember { mutableStateOf("") }
+    var id by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
@@ -31,15 +29,15 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it; if (loginError) onClearError() },
+            value = id,
+            onValueChange = { id = it },
             label = { Text("Username") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it; if (loginError) onClearError() },
+            onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -47,19 +45,12 @@ fun LoginScreen(
         )
 
         Button(
-            onClick = { onLogin(email, password) },
+            onClick = { onLogin(id, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
             Text("Login")
-        }
-        if (loginError) {
-            Text(
-                text = loginErrorMessage ?: "Login failed",
-                color = Color.Red,
-                modifier = Modifier.padding(top = 16.dp)
-            )
         }
         Row(
             modifier = Modifier
@@ -75,6 +66,14 @@ fun LoginScreen(
                 Text("Register")
             }
             }
+
+        if (loginError) {
+            Text(
+                text = "Login Failed",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
     }
 }
 
@@ -82,9 +81,8 @@ fun LoginScreen(
 @Composable
 fun LoginPreview() {
     LoginScreen(
-        onLogin = { email, pw ->  },
+        onLogin = { id, pw ->  },
         onRegister = {  },
-        loginError = false,
-        loginErrorMessage = ""
+        loginError = false
     )
 }
