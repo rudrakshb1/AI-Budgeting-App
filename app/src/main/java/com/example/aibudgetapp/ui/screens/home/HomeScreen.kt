@@ -3,14 +3,19 @@ package com.example.aibudgetapp.ui.screens.home
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.aibudgetapp.ui.screens.screenContainer.Screen
+import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainer
+import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
 import com.example.aibudgetapp.ui.theme.*
 
 @Composable
 fun HomeScreen(
-    userName: String
+    userName: String,
+    screenContainerViewModel: ScreenContainerViewModel,
 ) {
     AIBudgetAppTheme {
         Scaffold(
@@ -23,7 +28,19 @@ fun HomeScreen(
             )
         }
     }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.CenterEnd,
+    ){
+    Button(
+        onClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) },
+    ) {
+        Text("+")
+    }
 }
+    }
 
 @Composable
 fun Greeting (
@@ -35,8 +52,4 @@ fun Greeting (
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun AppPreview() {
-    HomeScreen("Spencer")
-}
+
