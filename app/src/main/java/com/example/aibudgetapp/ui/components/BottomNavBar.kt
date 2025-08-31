@@ -2,15 +2,23 @@ package com.example.aibudgetapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.aibudgetapp.ui.theme.Cream
-import com.example.aibudgetapp.ui.theme.DarkNavy
+import androidx.compose.ui.tooling.preview.Preview
+
+// TODO: Replace Material icons with custom SVGs, similar to the ones on Figma
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 
 @Composable
 fun BottomNavBar(
@@ -18,53 +26,66 @@ fun BottomNavBar(
     onBudgetClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(DarkNavy),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        HomeButton(onHomeClick)
-        BudgetButton(onBudgetClick)
-        SettingsButton(onSettingsClick)
+    Column {
+        HorizontalDivider(
+            color = Color.LightGray,
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            NavItem(
+                icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
+                label = "Home",
+                onClick = onHomeClick
+            )
+            NavItem(
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Budget", tint = Color.Black) },
+                label = "Budget",
+                onClick = onBudgetClick
+            )
+            NavItem(
+                icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
+                label = "Settings",
+                onClick = onSettingsClick
+            )
+        }
     }
 }
 
 @Composable
-fun HomeButton(
-    onHomeClick: () -> Unit,
+private fun NavItem(
+    icon: @Composable () -> Unit,
+    label: String,
+    onClick: () -> Unit
 ) {
-    Text(
-        "Home",
-        color= Cream,
-        fontSize = 18.sp,
-        modifier = Modifier.clickable {
-            onHomeClick()
-        })
+    Column(
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        icon()
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, color = Color.Black, fontSize = 12.sp)
+    }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun BudgetButton(
-    onBudgetClick: () -> Unit
-) {
-    Text(
-        "Budget",
-        color= Cream,
-        fontSize = 18.sp,
-        modifier = Modifier.clickable {
-            onBudgetClick()
-        })
-}
-
-@Composable
-fun SettingsButton(
-    onSettingsClick: () -> Unit
-) {
-    Text(
-        "Settings",
-        color= Cream,
-        fontSize = 18.sp,
-        modifier = Modifier.clickable {
-            onSettingsClick()
-        })
+private fun BottomNavBarPreview() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Spacer(modifier = Modifier.weight(1f))
+        BottomNavBar(
+            onHomeClick = {},
+            onBudgetClick = {},
+            onSettingsClick = {}
+        )
+    }
 }
