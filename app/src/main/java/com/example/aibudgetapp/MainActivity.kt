@@ -48,13 +48,15 @@ class MainActivity : ComponentActivity() {
                 RegistrationScreen(
                     onRegister = { email, password -> registrationViewModel.register(email, password) },
                     onCancel = { showRegister = false },
-                    registrationError = registrationError
+                    registrationError = registrationError,
+                    registrationErrorMessage = registrationViewModel.registerErrorMessage
                 )
             } else {
                 LoginScreen( //open LoginScreen if not loggedIn
                     onLogin = { id, password -> loginViewModel.login(id, password) },
                     onRegister = {showRegister=true},
-                    loginError = loginError
+                    loginError = loginError,
+                    loginErrorMessage = loginViewModel.loginErrorMessage
                 )
             }
         }
