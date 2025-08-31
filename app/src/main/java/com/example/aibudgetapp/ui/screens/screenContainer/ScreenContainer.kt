@@ -8,10 +8,11 @@ import androidx.compose.ui.Modifier
 import com.example.aibudgetapp.ui.components.*
 import com.example.aibudgetapp.ui.screens.home.HomeScreen
 import com.example.aibudgetapp.ui.screens.settings.SettingsScreen
+import com.example.aibudgetapp.ui.screens.budget.BudgetScreen
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionScreen
 import com.example.aibudgetapp.ui.theme.*
 
-enum class Screen { HOME, ADDTRANSACTION, SETTINGS }
+enum class Screen { HOME, ADDTRANSACTION, SETTINGS, BUDGET }
 
 @Composable
 fun ScreenContainer(userName: String) {
@@ -22,19 +23,22 @@ fun ScreenContainer(userName: String) {
             bottomBar = {
                 BottomNavBar(
                     onHomeClick = { screenContainerViewModel.navigateTo(Screen.HOME) },
-                    onAddTransactionButtonClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) },
+                    onBudgetClick = { screenContainerViewModel.navigateTo(Screen.BUDGET) },
                     onSettingsClick = { screenContainerViewModel.navigateTo(Screen.SETTINGS) }
                 )
             }
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (screenContainerViewModel.currentScreen) {
-                    Screen.HOME -> HomeScreen(userName = userName)
+                    Screen.HOME -> HomeScreen(
+                        userName = userName,
+                        screenContainerViewModel = screenContainerViewModel,)
                     Screen.ADDTRANSACTION -> AddTransactionScreen(
                         onAddTransaction = {amount, category -> screenContainerViewModel.addTransaction(amount, category) },
                         AddTransactionError = screenContainerViewModel.addTransactionError
                     )
                     Screen.SETTINGS -> SettingsScreen()
+                    Screen.BUDGET -> BudgetScreen()
                 }
             }
         }

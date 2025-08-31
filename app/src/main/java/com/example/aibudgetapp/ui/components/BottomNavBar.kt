@@ -3,19 +3,18 @@ package com.example.aibudgetapp.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.tooling.preview.Preview
 
-//TODO: Replace the material icons with SVG's to make it look better
+// TODO: Replace Material icons with custom SVGs, similar to the ones on Figma
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Add
@@ -24,7 +23,7 @@ import androidx.compose.material.icons.filled.Settings
 @Composable
 fun BottomNavBar(
     onHomeClick: () -> Unit,
-    onAddTransactionButtonClick: () -> Unit,
+    onBudgetClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Column {
@@ -47,18 +46,12 @@ fun BottomNavBar(
                 onClick = onHomeClick
             )
             NavItem(
-                icon = { Icon(Icons.Filled.Add, contentDescription = "Add", tint = Color.Black) },
-                label = "Add",
-                onClick = onAddTransactionButtonClick
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Budget", tint = Color.Black) },
+                label = "Budget",
+                onClick = onBudgetClick
             )
             NavItem(
-                icon = {
-                    Icon(
-                        Icons.Filled.Settings,
-                        contentDescription = "Settings",
-                        tint = Color.Black
-                    )
-                },
+                icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
                 label = "Settings",
                 onClick = onSettingsClick
             )
@@ -67,7 +60,7 @@ fun BottomNavBar(
 }
 
 @Composable
-fun NavItem(
+private fun NavItem(
     icon: @Composable () -> Unit,
     label: String,
     onClick: () -> Unit
@@ -80,23 +73,18 @@ fun NavItem(
     ) {
         icon()
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = label,
-            color = Color.Black,
-            fontSize = 12.sp
-        )
+        Text(text = label, color = Color.Black, fontSize = 12.sp)
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-fun BottomNavBarPreview() {
+private fun BottomNavBarPreview() {
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.weight(1f))
         BottomNavBar(
             onHomeClick = {},
-            onAddTransactionButtonClick = {},
+            onBudgetClick = {},
             onSettingsClick = {}
         )
     }
