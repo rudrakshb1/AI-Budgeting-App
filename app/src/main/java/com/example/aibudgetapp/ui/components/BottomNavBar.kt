@@ -15,7 +15,7 @@ import com.example.aibudgetapp.ui.theme.DarkNavy
 @Composable
 fun BottomNavBar(
     onHomeClick: () -> Unit,
-    onAddTransactionButtonClick: () -> Unit,
+    onBudgetClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Row(
@@ -25,7 +25,7 @@ fun BottomNavBar(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         HomeButton(onHomeClick)
-        AddTransactionButton(onAddTransactionButtonClick)
+        BudgetButton(onBudgetClick)
         SettingsButton(onSettingsClick)
     }
 }
@@ -44,15 +44,15 @@ fun HomeButton(
 }
 
 @Composable
-fun AddTransactionButton(
-    onAddTransactionButtonClick: () -> Unit
+fun BudgetButton(
+    onBudgetClick: () -> Unit
 ) {
     Text(
-        "Add Transaction",
+        "Budget",
         color= Cream,
         fontSize = 18.sp,
         modifier = Modifier.clickable {
-            onAddTransactionButtonClick()
+            onBudgetClick()
         })
 }
 
