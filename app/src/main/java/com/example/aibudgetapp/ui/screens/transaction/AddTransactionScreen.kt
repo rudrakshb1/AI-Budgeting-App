@@ -1,6 +1,6 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
-import android.net.Uri                                   // ✅ NEW
+import android.net.Uri                                   //  NEW
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
-import com.example.aibudgetapp.ui.components.UploadPhotoButton   // ✅ NEW
+import com.example.aibudgetapp.ui.components.UploadPhotoButton   // NEW
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +23,7 @@ fun AddTransactionScreen(
     var amount by remember { mutableIntStateOf(0) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    // ✅ NEW: hold the chosen image locally (no DB / VM needed yet)
+    // hold the chosen image locally (no DB / VM needed yet)
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
 
     Column(
@@ -38,7 +38,7 @@ fun AddTransactionScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
 
-        // ✅ NEW: Upload button (shows Camera or Gallery dialog)
+        //Upload button (shows Camera or Gallery dialog)
         UploadPhotoButton { uri ->
             receiptUri = uri
         }

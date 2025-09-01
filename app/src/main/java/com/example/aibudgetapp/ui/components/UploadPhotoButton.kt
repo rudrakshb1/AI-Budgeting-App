@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.createImageUri
+import com.example.aibudgetapp.ui.parseCsv
+
 
 @Composable
 fun UploadPhotoButton(
@@ -53,6 +56,22 @@ fun UploadPhotoButton(
         }
     }
 
+    // CSV picker launcher
+    val csvPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            // parseCsv to get the transactions
+            val transactions = parseCsv(context, it)
+
+            // Print to Logcat for testing
+            transactions.forEach { tx ->
+                android.util.Log.d("CSV_IMPORT", "Parsed transaction: $tx")
+            }
+        }
+    }
+
+
     Button(
         onClick = { showChooser = true },
         modifier = Modifier
@@ -67,22 +86,33 @@ fun UploadPhotoButton(
     if (showChooser) {
         AlertDialog(
             onDismissRequest = { showChooser = false },
-            title = { Text("Add receipt") },
-            text = { Text("Choose a source") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showChooser = false
-                    galleryPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                }) { Text("Gallery") }
+            title = { Text("Upload transaction") },
+            text = {
+                Column {
+                    // Gallery
+                    TextButton(onClick = {
+                        showChooser = false
+                        galleryPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }) { Text("Gallery") }
+
+                    // Camera
+                    TextButton(onClick = {
+                        showChooser = false
+                        cameraPermission.launch(Manifest.permission.CAMERA)
+                    }) { Text("Camera") }
+
+                    // Bank Statement (CSV)
+                    TextButton(onClick = {
+                        showChooser = false
+                        csvPicker.launch("text/csv")
+                    }) { Text("Bank Statement (CSV)") }
+                }
             },
-            dismissButton = {
-                TextButton(onClick = {
-                    showChooser = false
-                    cameraPermission.launch(Manifest.permission.CAMERA)
-                }) { Text("Camera") }
-            }
+            confirmButton = {}, // not needed anymore
+            dismissButton = {}  // not needed anymore
         )
     }
+
 }
