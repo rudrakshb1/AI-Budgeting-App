@@ -27,14 +27,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.TextButton
+
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
-
-){
+    onBackClick: () -> Unit = {}   //added parameter for back
+) {
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
     var selecteddate by remember { mutableStateOf(date[0]) }
     val type = listOf("Weekly", "Monthly")
@@ -52,17 +55,32 @@ fun BudgetScreen(
             .fillMaxSize()
             .padding(16.dp),
     ) {
-        Text(
-            text = "New Budget",
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        // Top bar with Back button + Title
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TextButton(onClick = { onBackClick() }) {
+                Text("Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "New Budget",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        //  existing form starts here
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = {Text("Name")},
+            label = { Text("Name") },
             modifier = Modifier.fillMaxWidth(),
-            )
+        )
         Spacer(modifier = Modifier.height(20.dp))
+
         ExposedDropdownMenuBox(
             expanded = isDateExpanded,
             onExpandedChange = { isDateExpanded = !isDateExpanded },
@@ -89,7 +107,6 @@ fun BudgetScreen(
         }
 
         Text(text = "Currently selected: $selecteddate")
-
 
         ExposedDropdownMenuBox(
             expanded = isTypeExpanded,
@@ -119,18 +136,20 @@ fun BudgetScreen(
         Text(text = "Currently selected: $chosentype")
 
         Spacer(modifier = Modifier.height(20.dp))
+
         OutlinedTextField(
             value = amount.toString(),
             onValueChange = { amount = it.toIntOrNull() ?: 0 },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
+
         Spacer(modifier = Modifier.height(20.dp))
 
-        Row (
+        Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
-        ){
+        ) {
             Text("Include savings transfers")
             Spacer(modifier = Modifier.width(140.dp))
             Switch(
@@ -138,10 +157,9 @@ fun BudgetScreen(
                 onCheckedChange = { checked = it }
             )
         }
-
     }
-
 }
+
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {
