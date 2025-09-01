@@ -61,6 +61,13 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.patrykandpatrick.vico:compose:1.13.0")
+    implementation("com.patrykandpatrick.vico:core:1.13.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -69,5 +76,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
 }
