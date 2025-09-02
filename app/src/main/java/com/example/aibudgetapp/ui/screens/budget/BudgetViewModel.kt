@@ -1,4 +1,8 @@
 package com.example.aibudgetapp.ui.screens.budget
 
-class BudgetViewModel {
+import androidx.lifecycle.ViewModel
+
+class BudgetViewModel(private val repository: BudgetRepository): ViewModel() {
+
+
 }

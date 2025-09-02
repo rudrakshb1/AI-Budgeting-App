@@ -52,7 +52,11 @@ fun ScreenContainer(userName: String) {
 
                     // Form screen with Back button
                     Screen.BUDGET -> BudgetScreen(
-                        onBackClick = { screenContainerViewModel.navigateTo(Screen.BUDGETOVERVIEW) }
+                        onBackClick = { screenContainerViewModel.navigateTo(Screen.BUDGETOVERVIEW) },
+                        onAddBudget = { name, selecteddate, chosentype, chosencategory, amount, checked ->
+                            screenContainerViewModel.addBudget( name, selecteddate, chosentype, chosencategory, amount, checked) },
+                        budgetError = screenContainerViewModel.budgetError,
+
                     )
                 }
             }
