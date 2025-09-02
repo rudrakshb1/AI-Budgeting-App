@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
 
@@ -36,16 +38,22 @@ import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewMod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
-    onBackClick: () -> Unit = {}   //added parameter for back
+    onAddBudget: (String, Int, String, String, Int, Boolean) -> Unit,
+    onBackClick: () -> Unit = {},  //added parameter for back
+    budgetError: Boolean,
+
 ) {
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
     var selecteddate by remember { mutableStateOf(date[0]) }
     val type = listOf("Weekly", "Monthly")
     var chosentype by remember { mutableStateOf(type[0]) }
+    val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
+    var chosencategory by remember { mutableStateOf(categories[0]) }
     var name by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf(0) }
     var isDateExpanded by remember { mutableStateOf(false) }
     var isTypeExpanded by remember { mutableStateOf(false) }
+    var isCategoryExpanded by remember { mutableStateOf(false) }
     var checked by remember { mutableStateOf(true) }
 
     Column(
@@ -63,7 +71,7 @@ fun BudgetScreen(
             TextButton(onClick = { onBackClick() }) {
                 Text("Back")
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(75.dp))
             Text(
                 text = "New Budget",
                 style = MaterialTheme.typography.bodyLarge,
@@ -135,6 +143,33 @@ fun BudgetScreen(
 
         Text(text = "Currently selected: $chosentype")
 
+        ExposedDropdownMenuBox(
+            expanded = isCategoryExpanded,
+            onExpandedChange = { isCategoryExpanded = !isCategoryExpanded },
+        ) {
+            TextField(
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                value = chosencategory,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
+            )
+            ExposedDropdownMenu(expanded = isCategoryExpanded, onDismissRequest = { isCategoryExpanded = false }) {
+                categories.forEachIndexed { index, text ->
+                    DropdownMenuItem(
+                        text = { Text(text = text) },
+                        onClick = {
+                            chosencategory = categories[index]
+                            isCategoryExpanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
+
+        Text(text = "Currently selected: $chosencategory")
+
         Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
@@ -157,11 +192,21 @@ fun BudgetScreen(
                 onCheckedChange = { checked = it }
             )
         }
+        Button(
+            onClick = { onAddBudget(name, selecteddate, chosentype, chosencategory, amount, checked) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+        ) {
+            Text("Save")
+        }
+        if (budgetError){
+            Text(
+                "Budget Creation failed. \nPlease check for any incorrect values",
+                color = Color.Red,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun AppPreview() {
-    BudgetScreen()
-}
