@@ -9,7 +9,7 @@ import com.example.aibudgetapp.ui.components.*
 import com.example.aibudgetapp.ui.screens.home.HomeScreen
 import com.example.aibudgetapp.ui.screens.settings.SettingsScreen
 import com.example.aibudgetapp.ui.screens.budget.BudgetScreen
-import com.example.aibudgetapp.ui.screens.transaction.AddTransactionScreen
+import com.example.aibudgetapp.ui.screens.transaction.TransactionScreen
 import com.example.aibudgetapp.ui.theme.*
 import com.example.aibudgetapp.ui.screens.budget.BudgetOverviewScreen
 
@@ -37,12 +37,8 @@ fun ScreenContainer(userName: String) {
                         userName = userName,
                         screenContainerViewModel = screenContainerViewModel,
                     )
-                    Screen.ADDTRANSACTION -> AddTransactionScreen(
-                        onAddTransaction = { amount, category ->
-                            screenContainerViewModel.addTransaction(amount, category)
-                        },
-                        AddTransactionError = screenContainerViewModel.addTransactionError
-                    )
+                    Screen.ADDTRANSACTION -> TransactionScreen()
+
                     Screen.SETTINGS -> SettingsScreen()
 
                     //  New overview screen with tabs + FAB

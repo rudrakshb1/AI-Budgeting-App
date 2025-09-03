@@ -19,7 +19,7 @@ class ScreenContainerViewModel {
     var budgetErrorMessage by mutableStateOf<String?>(null)
         private set
 
-    fun addTransaction(amount: Int, category: String) {
+    fun addTransaction(amount: Double, category: String) {
         if (amount <= 0 || category.isBlank()) {
             addTransactionError = true
         } else {

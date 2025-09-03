@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.compose.material:material:1.6.8")
     implementation("io.coil-kt:coil-compose:2.3.0")
     implementation("androidx.compose.material:material-icons-extended")
 
