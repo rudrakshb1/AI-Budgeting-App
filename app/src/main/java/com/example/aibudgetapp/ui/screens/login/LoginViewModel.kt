@@ -25,6 +25,9 @@ class LoginViewModel : ViewModel() {
     var loginErrorMessage by mutableStateOf<String?>(null)
         private set
 
+    var currentUid by mutableStateOf<String?>(null)
+        private set
+
     private fun mapAuthErrorShort(e: Exception): String = when (e) {
         is FirebaseAuthInvalidCredentialsException,
         is FirebaseAuthInvalidUserException -> "Invalid email or password."
@@ -41,6 +44,7 @@ class LoginViewModel : ViewModel() {
                     isLoggedIn = true
                     loginError = false
                     loginErrorMessage = null
+                    currentUid = user?.uid
                     userName = user?.email ?: ""
                 } else {
                     // Login failed
