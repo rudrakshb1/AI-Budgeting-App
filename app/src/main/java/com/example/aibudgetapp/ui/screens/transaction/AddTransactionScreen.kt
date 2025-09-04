@@ -11,16 +11,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import com.example.aibudgetapp.ui.components.UploadPhotoButton   // NEW
+import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
+import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionScreen(
-    onAddTransaction: (Int, String) -> Unit,
-    AddTransactionError: Boolean
-) {
+fun AddTransactionScreen() {
+    val addTransactionViewModel = remember { AddTransactionViewModel(TransactionRepository()) }
+    val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
     val list = listOf("Food & Drink", "Rent", "Gas", "Other")
     var selected by remember { mutableStateOf(list[0]) }
-    var amount by remember { mutableIntStateOf(0) }
+    var amount by remember { mutableDoubleStateOf(0.00) }
     var isExpanded by remember { mutableStateOf(false) }
 
     // hold the chosen image locally (no DB / VM needed yet)
@@ -54,7 +55,7 @@ fun AddTransactionScreen(
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toIntOrNull() ?: 0 },
+            onValueChange = { amount = (it.toDoubleOrNull() ?: 0) as Double },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -90,7 +91,7 @@ fun AddTransactionScreen(
             onClick = {
                 // teammate’s callback stays the same (amount + category)
                 // (Later, when team is ready, extend callback to include receiptUri?.toString())
-                onAddTransaction(amount, selected)
+                addTransactionViewModel.onAddTransaction("", "", amount, selected)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,7 +100,7 @@ fun AddTransactionScreen(
             Text("Save")
         }
 
-        if (AddTransactionError) {
+        if (transactionError) {
             Text(
                 text = "Failed to add transaction",
                 color = Color.Red,
@@ -112,10 +113,5 @@ fun AddTransactionScreen(
 @Preview(showBackground = true)
 @Composable
 fun AddTransactionScreenPreview() {
-    AddTransactionScreen(
-        onAddTransaction = { amount, category ->
-            println("Transaction added: Amount = $amount, Category = $category")
-        },
-        AddTransactionError = false
-    )
+    AddTransactionScreen()
 }

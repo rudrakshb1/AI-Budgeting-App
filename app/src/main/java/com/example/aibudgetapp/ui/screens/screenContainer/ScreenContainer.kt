@@ -37,12 +37,7 @@ fun ScreenContainer(userName: String) {
                         userName = userName,
                         screenContainerViewModel = screenContainerViewModel,
                     )
-                    Screen.ADDTRANSACTION -> AddTransactionScreen(
-                        onAddTransaction = { amount, category ->
-                            screenContainerViewModel.addTransaction(amount, category)
-                        },
-                        AddTransactionError = screenContainerViewModel.addTransactionError
-                    )
+                    Screen.ADDTRANSACTION -> AddTransactionScreen()
                     Screen.SETTINGS -> SettingsScreen()
 
                     //  New overview screen with tabs + FAB
@@ -52,11 +47,7 @@ fun ScreenContainer(userName: String) {
 
                     // Form screen with Back button
                     Screen.BUDGET -> BudgetScreen(
-                        onBackClick = { screenContainerViewModel.navigateTo(Screen.BUDGETOVERVIEW) },
-                        onAddBudget = { name, selecteddate, chosentype, chosencategory, amount, checked ->
-                            screenContainerViewModel.addBudget( name, selecteddate, chosentype, chosencategory, amount, checked) },
-                        budgetError = screenContainerViewModel.budgetError,
-
+                        onBackClick = { screenContainerViewModel.navigateTo(Screen.BUDGETOVERVIEW) }
                     )
                 }
             }

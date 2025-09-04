@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.ui.screens.budget
 
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,20 +30,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.graphics.Color
+import com.example.aibudgetapp.ui.screens.login.LoginViewModel
 
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
-
+import kotlin.getValue
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
-    onAddBudget: (String, Int, String, String, Int, Boolean) -> Unit,
     onBackClick: () -> Unit = {},  //added parameter for back
-    budgetError: Boolean,
 
 ) {
+    val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
+    val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
+
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
     var selecteddate by remember { mutableStateOf(date[0]) }
     val type = listOf("Weekly", "Monthly")
@@ -193,7 +197,7 @@ fun BudgetScreen(
             )
         }
         Button(
-            onClick = { onAddBudget(name, selecteddate, chosentype, chosencategory, amount, checked) },
+            onClick = { budgetViewModel.onAddBudget(name, selecteddate, chosentype, chosencategory, amount, checked) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
