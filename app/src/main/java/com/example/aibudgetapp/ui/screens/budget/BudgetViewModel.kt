@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.example.aibudgetapp.ui.screens.transaction.Transaction
 
 class BudgetViewModel(
     private val repository: BudgetRepository): ViewModel() {

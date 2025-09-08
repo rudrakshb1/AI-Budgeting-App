@@ -12,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
-import com.example.aibudgetapp.ui.components.UploadPhotoButton   // NEW
-import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
-import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
+import com.example.aibudgetapp.ui.components.UploadPhotoButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
