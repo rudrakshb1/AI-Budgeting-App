@@ -3,6 +3,8 @@ package com.example.aibudgetapp.ui.screens.transaction
 import android.net.Uri                                   //  NEW
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -107,6 +109,39 @@ fun AddTransactionScreen() {
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
+
+        Button(
+            onClick = {
+                addTransactionViewModel.fetchTransactions()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+        ) {
+            Text("read data")
+        }
+        if (transactionError) {
+            Text(
+                text = "Failed to fetch transaction",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+        }
+        val list = addTransactionViewModel.transactions
+        val loading = addTransactionViewModel.isLoading
+
+        if (loading) {
+            Text("Loading...")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                items(list) { tx ->
+                    Text("${tx.description} - ${tx.amount} (${tx.category})")
+                }
+            }
+        }
+
     }
 }
 

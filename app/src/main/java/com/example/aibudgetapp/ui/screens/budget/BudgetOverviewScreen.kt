@@ -2,6 +2,8 @@ package com.example.aibudgetapp.ui.screens.budget
 
 import android.graphics.Color
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +22,8 @@ enum class BudgetTab { OVERVIEW, SPENDING, TRANSACTIONS }
 @Composable
 fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
     var selectedTab by remember { mutableStateOf(BudgetTab.OVERVIEW) }
+    val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
+    val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
 
     Scaffold(
         topBar = {
@@ -77,6 +81,40 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                             Text("Remaining: $$remaining")
                         }
                     }
+
+                    Button(
+                        onClick = { budgetViewModel.fetchBudgets() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                        Text("read budgets")
+                    }
+
+
+                    if (budgetError) {
+                        Text(
+                            text = "Failed to fetch transaction",
+                            color = androidx.compose.ui.graphics.Color.Red,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+                    val list = budgetViewModel.budgets
+                    val loading = budgetViewModel.isLoading
+
+                    if (loading) {
+                        Text("Loading...")
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                        ) {
+                            items(list) { b ->
+                                Text("${b.name} - ${b.amount} (${b.chosencategory})")
+                                Text("Type: ${b.selecteddate} ${b.chosentype}, Include savings: ${b.checked}")
+                            }
+                        }
+                    }
+
                 }
 
                 BudgetTab.SPENDING -> {

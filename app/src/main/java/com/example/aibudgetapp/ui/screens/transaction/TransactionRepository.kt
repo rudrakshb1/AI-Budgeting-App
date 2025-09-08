@@ -26,4 +26,35 @@ class TransactionRepository {
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { e -> onFailure(e) }
     }
+
+    fun getTransactions(
+        onSuccess: (List<Transaction>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            userTransactionRef()
+                // .orderBy("date")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val list = snapshot.documents.map { doc ->
+                        val data = doc.data ?: emptyMap<String, Any?>()
+                        Transaction(
+                            id = (data["id"] as? String) ?: doc.id,
+                            description = data["description"] as? String ?: "",
+                            amount = when (val v = data["amount"]) {
+                                is Number -> v.toDouble()
+                                else -> 0.0
+                            },
+                            category = data["category"] as? String ?: ""
+                        )
+                    }
+                    onSuccess(list)
+                }
+                .addOnFailureListener(onFailure)
+        } catch (e: IllegalStateException) {
+            onFailure(e)
+        }
+    }
+
+
 }
