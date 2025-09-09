@@ -10,6 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.github.mikephil.charting.components.Description
+import com.example.aibudgetapp.ocr.AutoCategorizer
+import com.example.aibudgetapp.ocr.ParsedReceipt
+
 
 
 class AddTransactionViewModel(
@@ -81,6 +84,31 @@ class AddTransactionViewModel(
             }
         )
     }
+
+    // scanner result
+    fun addFromOcr(merchant: String, total: Double, rawText: String, imageUri: Uri) {
+        // Re-use your existing Transaction model and repository methods
+        val guessedCategory = AutoCategorizer.guess(rawText)   // from B) below
+        val tx = Transaction(
+            id = "",                       // your repo will assign ID if needed
+            description = merchant,        // map OCR merchant -> your "description"
+            amount = total,
+            category = guessedCategory
+        )
+        onReceiptSelected(imageUri)        // keep your current UI state in sync
+        addTransaction(tx)                 // uses your existing addTransaction(...)
+    }
+
+    // OPTIONAL helper
+    fun addFromParsed(parsed: ParsedReceipt, imageUri: Uri) {
+        addFromOcr(
+            merchant = parsed.merchant,
+            total = parsed.total,
+            rawText = parsed.rawText,
+            imageUri = imageUri
+        )
+    }
+
 }
 
 
