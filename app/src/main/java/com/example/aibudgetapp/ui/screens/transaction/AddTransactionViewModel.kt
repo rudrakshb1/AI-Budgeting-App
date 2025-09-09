@@ -14,7 +14,7 @@ import com.github.mikephil.charting.components.Description
 
 class AddTransactionViewModel(
     private val repository: TransactionRepository) : ViewModel() {
-    var amount by mutableIntStateOf(0)
+    var amount by mutableStateOf(0.0)
         private set
 
     var category by mutableStateOf("Food & Drink")
@@ -26,8 +26,14 @@ class AddTransactionViewModel(
     var transactionError by mutableStateOf(false)
         private set
 
+    var isLoading by mutableStateOf(false)
+        private set
+
+    var transactions by mutableStateOf<List<Transaction>>(emptyList())
+        private set
+
     fun onAmountChange(input: String) {
-        amount = input.toIntOrNull() ?: 0
+        amount = (input.toDoubleOrNull() ?: 0) as Double
     }
 
     fun onCategoryChange(value: String) {
@@ -47,7 +53,7 @@ class AddTransactionViewModel(
     }
 
     fun onAddTransaction(id: String, description: String, amount: Double, category: String) {
-        if (amount <= 0 || category.isBlank()) {
+        if (amount <= 0.0 || category.isBlank()) {
             transactionError = true
         } else {
             val transaction = Transaction(
@@ -59,4 +65,22 @@ class AddTransactionViewModel(
             addTransaction(t = transaction)
         }
     }
+
+    fun fetchTransactions() {
+        isLoading = true
+        transactionError = false
+
+        repository.getTransactions(
+            onSuccess = { list ->
+                transactions = list
+                isLoading = false
+            },
+            onFailure = {
+                isLoading = false
+                transactionError = true
+            }
+        )
+    }
 }
+
+

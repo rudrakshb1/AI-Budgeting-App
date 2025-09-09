@@ -3,6 +3,8 @@ package com.example.aibudgetapp.ui.screens.transaction
 import android.net.Uri                                   //  NEW
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
-import com.example.aibudgetapp.ui.components.UploadPhotoButton   // NEW
-import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
-import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
+import com.example.aibudgetapp.ui.components.UploadPhotoButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +107,39 @@ fun AddTransactionScreen() {
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
+
+        Button(
+            onClick = {
+                addTransactionViewModel.fetchTransactions()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+        ) {
+            Text("read data")
+        }
+        if (transactionError) {
+            Text(
+                text = "Failed to fetch transaction",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+        }
+        val list = addTransactionViewModel.transactions
+        val loading = addTransactionViewModel.isLoading
+
+        if (loading) {
+            Text("Loading...")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                items(list) { tx ->
+                    Text("${tx.description} - ${tx.amount} (${tx.category})")
+                }
+            }
+        }
+
     }
 }
 
