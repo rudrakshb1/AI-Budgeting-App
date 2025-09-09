@@ -65,6 +65,16 @@ dependencies {
     implementation("com.patrykandpatrick.vico:core:1.13.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Document Scanner (edge detection + crop UI via Play Services)
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+
+    // ML Kit on-device text recognition
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+
+    // Coroutines support for Task.await()
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+
 
 
 
