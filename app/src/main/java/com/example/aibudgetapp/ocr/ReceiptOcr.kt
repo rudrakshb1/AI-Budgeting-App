@@ -1,13 +1,18 @@
 package com.example.aibudgetapp.ocr
 
+
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class ParsedReceipt(
     val merchant: String,
@@ -20,34 +25,76 @@ object ReceiptOcr {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     suspend fun extract(uri: Uri, context: Context): ParsedReceipt {
-        // ✅ Works on minSdk 24 (no ImageDecoder)
         val img = InputImage.fromFilePath(context, uri)
         val res = recognizer.process(img).await()
         val raw = res.text
 
-        // Merchant: first non-empty line, trimmed
-        val merchant = raw.lineSequence()
-            .firstOrNull { it.isNotBlank() }
-            ?.trim()
-            .orEmpty()
-            .ifBlank { "Unknown" }
-            .take(40)
+        Log.d("OCR_RAW", raw)
 
-        // Total/Amount: try explicit "total" lines first, fallback to last price-looking number
-        val totalRegex = Regex("""(?i)(total|amount due|grand total)\D*([$€£]?\s*\d+[.,]\d{2})""")
-        val priceRegex = Regex("""([$€£]?\s*\d+[.,]\d{2})""")
-        val totalStr = totalRegex.find(raw)?.groupValues?.get(2)
-            ?: priceRegex.findAll(raw).map { it.value }.lastOrNull()
-            ?: "0.00"
-        val amount = totalStr
-            .replace(Regex("[^0-9.,]"), "")
-            .replace(",", ".")
-            .toDoubleOrNull() ?: 0.0
+        // --- Merchant ---
+        val merchant = pickMerchantFromBlocks(res)
+            .ifBlank {
+                raw.lineSequence()
+                    .map { it.trim() }
+                    .firstOrNull { it.isNotEmpty() && !it.any(Char::isDigit) }
+                    ?: "Unknown"
+            }
 
-        // Date: dd/mm/yyyy or mm/dd/yyyy or with '-' separators; fallback to now
-        val dateRegex = Regex("""(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})""")
+        // --- Amount (robust) ---
+        val lines = raw.lines()
+
+        // 1) Prefer labeled totals (supports spaced words: "sub total", "grand total", "amount due")
+        val labeledTotalRegex = Regex(
+            // label then up to ~25 non-digit chars then a money number (with optional $/thousand sep)
+            """(?i)(grand\s*total|amount\s*due|sub\s*total|gst\s*subtotal|total)\D{0,25}([$]?\s*\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{2}))"""
+        )
+        val labeledMatches = labeledTotalRegex.findAll(raw).toList()
+        val labeledPick = labeledMatches.lastOrNull()?.groupValues?.getOrNull(2)
+            ?.let { cleanToDouble(it) }
+
+        if (labeledPick != null) {
+            Log.d("OCR_AMOUNT", "Picked labeled total = $labeledPick")
+        }
+
+        // 2) Fallback: scan bottom 1/3, repair OCR digits and parse numbers
+        val unitPattern = Regex("""(?i)\b(@|ea|each|qty|x|kg|g|ml|pack|pcs?)\b""")
+        val startIdx = (lines.size * 2 / 3).coerceAtMost(lines.size - 1)
+
+        var bestBottom: Double? = null
+        for (i in lines.size - 1 downTo startIdx) {
+            val line = lines[i]
+            if (unitPattern.containsMatchIn(line)) continue
+
+            // collect candidate tokens that look like a monetary number
+            val tokenRegex = Regex("""[$]?\s*[0-9OolIiSsBbZzGg.,]{3,}""")
+            val tokens = tokenRegex.findAll(line).map { it.value }.toList()
+
+            val candidates = tokens.mapNotNull { token ->
+                cleanToDouble(token)
+            }.filter { v ->
+                // ignore silly values that are clearly not totals
+                v in 0.05..100000.0
+            }
+
+            if (candidates.isNotEmpty()) {
+                val localMax = candidates.maxOrNull()
+                if (localMax != null) {
+                    bestBottom = if (bestBottom == null) localMax else maxOf(bestBottom!!, localMax)
+                }
+            }
+        }
+
+        if (bestBottom != null) {
+            Log.d("OCR_AMOUNT", "Picked bottom fallback = $bestBottom")
+        }
+
+        val amount = labeledPick ?: bestBottom ?: 0.0
+        Log.d("OCR_RESULT", "Merchant=$merchant, Total=$amount")
+
+        // --- Date ---
+        val dateRegex = Regex("""(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[.]\d{2}[.]\d{2}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})""")
         val dateStr = dateRegex.find(raw)?.value
-        val dateEpochMs = parseToEpochMsOrNow(dateStr)
+        val dateEpochMs = parseDate(dateStr)
 
         return ParsedReceipt(
             merchant = merchant,
@@ -57,22 +104,77 @@ object ReceiptOcr {
         )
     }
 
-    private fun parseToEpochMsOrNow(dateStr: String?): Long {
+    private fun pickMerchantFromBlocks(res: Text): String {
+        val pageBottom = res.textBlocks.maxOfOrNull { it.boundingBox?.bottom ?: 0 } ?: return ""
+        val topCutoff = (pageBottom * 0.30).toInt()
+        val noiseRegex = Regex("(?i)(total|amount|gst|tax|invoice|receipt|tel|phone|date|time|eftpos|visa|mastercard|subtotal|balance|thank)")
+
+        return res.textBlocks.asSequence()
+            .filter { (it.boundingBox?.top ?: Int.MAX_VALUE) <= topCutoff }
+            .flatMap { it.lines.asSequence() }
+            .map { it.text.trim() }
+            .filter { it.isNotEmpty() && !noiseRegex.containsMatchIn(it) }
+            .maxByOrNull { it.length }
+            ?.take(40)
+            ?: ""
+    }
+
+    // -- helpers --
+
+    /**
+     * Repair common OCR digit mistakes and parse to Double.
+     * Examples: O->0, S->5, B->8, I/l->1, Z->2, G->6
+     */
+    private fun cleanToDouble(token: String): Double? {
+        val repaired = token
+            .replace("$", "")
+            .replace(" ", "")
+            .map { ch ->
+                when (ch) {
+                    'O', 'o' -> '0'
+                    'I', 'l' -> '1'
+                    'S', 's' -> '5'
+                    'B' -> '8'
+                    'Z', 'z' -> '2'
+                    'G', 'g' -> '6'
+                    else -> ch
+                }
+            }
+            .joinToString("")
+
+        // keep only digits and separators, normalize comma to dot
+        val digitsOnly = repaired.filter { it.isDigit() || it == '.' || it == ',' }
+            .replace(",", ".")
+
+        // ensure we have at least one dot with 2 decimals; if multiple dots, keep the last one
+        val normalized = run {
+            val parts = digitsOnly.split('.')
+            when {
+                parts.size == 1 -> digitsOnly // no dot; might be an integer – let toDoubleOrNull decide
+                parts.size >= 2 -> {
+                    val head = parts.dropLast(1).joinToString("") // remove inner dots
+                    val tail = parts.last()
+                    "$head.$tail"
+                }
+                else -> digitsOnly
+            }
+        }
+
+        return normalized.toDoubleOrNull()
+    }
+
+    private fun parseDate(dateStr: String?): Long {
         if (dateStr == null) return System.currentTimeMillis()
-        val parts = dateStr.replace("-", "/").split("/")
-        if (parts.size != 3) return System.currentTimeMillis()
+        val cleaned = dateStr.replace("-", "/").replace(".", "/").trim()
+        val formats = listOf("d/M/yy", "d/M/yyyy", "M/d/yy", "M/d/yyyy", "yyyy/MM/dd", "dd MMM yyyy", "d MMM yyyy")
 
-        // Heuristic: try both dd/MM and MM/dd; pick the one that doesn't crash and yields a plausible date
-        val y = parts[2].let { if (it.length == 2) "20$it" else it }.toIntOrNull() ?: LocalDate.now().year
-        val a = parts[0].toIntOrNull() ?: return System.currentTimeMillis()
-        val b = parts[1].toIntOrNull() ?: return System.currentTimeMillis()
-
-        val candidates = listOf(
-            runCatching { LocalDate.of(y, b, a) }.getOrNull(), // dd/MM/yyyy
-            runCatching { LocalDate.of(y, a, b) }.getOrNull()  // MM/dd/yyyy
-        ).filterNotNull()
-
-        val picked = candidates.firstOrNull() ?: LocalDate.now()
-        return picked.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        for (fmt in formats) {
+            try {
+                val formatter = DateTimeFormatter.ofPattern(fmt, Locale.ENGLISH)
+                val localDate = LocalDate.parse(cleaned, formatter)
+                return localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            } catch (_: Exception) { }
+        }
+        return System.currentTimeMillis()
     }
 }

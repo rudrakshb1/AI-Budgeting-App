@@ -40,9 +40,14 @@ fun AddTransactionScreen() {
         )
 
         //Upload button (shows Camera or Gallery dialog)
-        UploadPhotoButton { uri ->
-            receiptUri = uri
-        }
+        UploadPhotoButton(
+            onImagePicked = { uri ->
+
+                addTransactionViewModel.onReceiptSelected(uri)
+                receiptUri = uri
+            },
+            addTxViewModel = addTransactionViewModel   //  pass the VM
+        )
 
         // Optional: let the user know something is attached
         if (receiptUri != null) {
