@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,7 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.github.mikephil.charting.components.Description
-
+import com.example.aibudgetapp.ocr.ParsedReceipt
+import android.util.Log
 
 class AddTransactionViewModel(
     private val repository: TransactionRepository) : ViewModel() {
@@ -81,6 +83,41 @@ class AddTransactionViewModel(
             }
         )
     }
+
+    fun addFromOcr(
+        merchant: String,
+        total: Double,
+        rawText: String,
+        imageUri: Uri
+    ) {
+        val tx = Transaction(
+            id = "",
+            description = merchant.ifBlank { "Unknown" },
+            amount = total,
+            category = "Uncategorized" // later: call AutoCategorizer here
+        )
+
+        repository.addTransaction(
+            transaction = tx,
+            onSuccess = { fetchTransactions() },
+            onFailure = { transactionError = true }
+        )
+    }
+
+    fun addFromParsed(parsed: ParsedReceipt, imageUri: Uri) {
+        // Debug log to check what OCR extracted
+        Log.d("VIEWMODEL", "Saving Transaction: merchant=${parsed.merchant}, total=${parsed.total}")
+
+        addFromOcr(
+            merchant = parsed.merchant,
+            total = parsed.total,
+            rawText = parsed.rawText,
+            imageUri = imageUri
+        )
+    }
+
+
+
+
+
 }
-
-
