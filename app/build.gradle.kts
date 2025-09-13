@@ -28,17 +28,22 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+
     buildFeatures {
         compose = true
     }
+
+    // Java 8 APIs + desugaring (lets you use java.time on minSdk 24)
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
+
 
 dependencies {
 
@@ -65,6 +70,34 @@ dependencies {
     implementation("com.patrykandpatrick.vico:core:1.13.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Document Scanner (edge detection + crop UI via Play Services)
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+
+    // ML Kit on-device text recognition
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+
+    // Coroutines support for Task.await()
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("com.github.yalantis:ucrop:2.2.8")
+    // CameraX core libs
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    implementation("androidx.camera:camera-extensions:1.3.4")
+
+    // Lifecycle Compose integration (needed for viewModel())
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+   // Compose-aware lifecycle runtime
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.0")
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
+
+
+
 
 
 

@@ -17,6 +17,8 @@ import com.example.aibudgetapp.ui.screens.registration.RegistrationScreen
 import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 
 
+
+
 class MainActivity : ComponentActivity() {
 
     private val loginViewModel by viewModels<LoginViewModel>()
@@ -24,6 +26,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContent {
 
             var showRegister by remember { mutableStateOf(false) }

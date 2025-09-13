@@ -3,6 +3,7 @@ package com.example.aibudgetapp.ui.screens.transaction
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import android.util.Log
 
 class TransactionRepository {
 
@@ -15,6 +16,7 @@ class TransactionRepository {
         .collection("transactions")
 
     fun addTransaction(transaction: Transaction, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        Log.d("REPOSITORY", "Firestore push: $transaction")
         val map = hashMapOf(
             "id" to transaction.id,
             "description" to transaction.description,
