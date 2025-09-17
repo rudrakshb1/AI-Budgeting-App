@@ -105,7 +105,7 @@ fun AddTransactionScreen() {
             onClick = {
                 // teammate’s callback stays the same (amount + category)
                 // (Later, when team is ready, extend callback to include receiptUri?.toString())
-                addTransactionViewModel.onAddTransaction("", "", amount, selected, transactionDate)
+                addTransactionViewModel.onAddTransaction("", amount, selected, transactionDate)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,6 +151,9 @@ fun AddTransactionScreen() {
                 items(list) { tx ->
                     val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
                     Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
+                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
+                        Text("Delete")
+                    }
                 }
             }
         }

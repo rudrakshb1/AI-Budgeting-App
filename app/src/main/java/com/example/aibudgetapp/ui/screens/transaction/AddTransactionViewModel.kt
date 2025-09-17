@@ -50,12 +50,12 @@ class AddTransactionViewModel(
         )
     }
 
-    fun onAddTransaction(id: String, description: String, amount: Double, category: String, date: String) {
+    fun onAddTransaction(description: String, amount: Double, category: String, date: String) {
         if (amount <= 0.0 || category.isBlank()) {
             transactionError = true
         } else {
             val transaction = Transaction(
-                id = id,
+                id = "",
                 description = description,
                 amount = amount,
                 category = category,
@@ -114,8 +114,12 @@ class AddTransactionViewModel(
         )
     }
 
-
-
-
+    fun deleteTransaction(id: String) {
+        repository.deleteTransaction(
+            id = id,
+            onSuccess = { fetchTransactions() },
+            onFailure = { transactionError = true }
+        )
+    }
 
 }
