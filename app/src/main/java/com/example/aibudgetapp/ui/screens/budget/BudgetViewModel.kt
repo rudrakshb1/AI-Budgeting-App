@@ -28,15 +28,16 @@ class BudgetViewModel(
         )
     }
 
-    fun onAddBudget(name: String, selecteddate: Int, chosentype: String, chosencategory: String, amount: Int, checked: Boolean){
+    fun onAddBudget(name: String, chosentype: String, chosencategory: String, amount: Int, checked: Boolean){
         if (amount <= 0 || name.isBlank()) {
             budgetError = true
         } else{
             val budget = Budget(
+                id = "",
                 name = name,
-                selecteddate = selecteddate,
-                chosentype = chosentype,
-                chosencategory = chosencategory,
+                // selectedDate = selecteddate,
+                chosenType = chosentype,
+                chosenCategory = chosencategory,
                 amount = amount,
                 checked = checked
             )
@@ -57,6 +58,14 @@ class BudgetViewModel(
                 isLoading = false
                 budgetError = true
             }
+        )
+    }
+
+    fun deleteBudget(id: String) {
+        repository.deleteBudget(
+            id = id,
+            onSuccess = { fetchBudgets() },
+            onFailure = { budgetError = true }
         )
     }
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -34,7 +35,7 @@ fun OverviewScreen()
 
     if (budgetError) {
         Text(
-            text = "Failed to fetch transaction",
+            text = "Failed to fetch budget",
             color = androidx.compose.ui.graphics.Color.Red,
             modifier = Modifier.padding(top = 16.dp),
         )
@@ -48,6 +49,9 @@ fun OverviewScreen()
         ) {
             items(list) { b ->
                 BudgetItemCard(b)
+                TextButton(onClick = { budgetViewModel.deleteBudget(b.id) }) {
+                    Text("Delete")
+                }
             }
         }
     }
