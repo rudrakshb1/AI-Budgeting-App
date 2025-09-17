@@ -30,6 +30,8 @@ fun OverviewScreen()
     val remaining = totalBudget - totalSpent
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
+    val list = budgetViewModel.budgets
+    val loading = budgetViewModel.isLoading
 
     Text("📊 Budget Overview", style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
@@ -63,8 +65,6 @@ fun OverviewScreen()
             modifier = Modifier.padding(top = 16.dp),
         )
     }
-    val list = budgetViewModel.budgets
-    val loading = budgetViewModel.isLoading
 
     if (loading) {
         Text("Loading...")
@@ -73,8 +73,7 @@ fun OverviewScreen()
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
         ) {
             items(list) { b ->
-                Text("${b.name} - ${b.amount} (${b.chosencategory})")
-                Text("Type: ${b.selecteddate} ${b.chosentype}, Include savings: ${b.checked}")
+                BudgetItemCard(b)
             }
         }
     }
