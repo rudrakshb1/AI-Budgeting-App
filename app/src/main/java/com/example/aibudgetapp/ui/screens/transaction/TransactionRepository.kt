@@ -22,6 +22,7 @@ class TransactionRepository {
             "description" to transaction.description,
             "amount" to transaction.amount,
             "category" to transaction.category,
+            "date" to transaction.date,
         )
         userTransactionRef()
             .add(map)
@@ -47,7 +48,8 @@ class TransactionRepository {
                                 is Number -> v.toDouble()
                                 else -> 0.0
                             },
-                            category = data["category"] as? String ?: ""
+                            category = data["category"] as? String ?: "",
+                            date = data["date"] as? String ?: "",
                         )
                     }
                     onSuccess(list)
