@@ -47,7 +47,10 @@ class MainActivity : ComponentActivity() {
             }
 
             if (isLoggedIn) {
-                ScreenContainer( userName = userName) //open main page if loggedIn
+                ScreenContainer(
+                    userName = userName,
+                    onLogout = { loginViewModel.logout() }
+                )
             } else if (showRegister) {
                 RegistrationScreen(
                     onRegister = { email, password -> registrationViewModel.register(email, password) },
