@@ -42,7 +42,6 @@ class BudgetRepository {
     ) {
         try {
             userBudgetsRef()
-                .orderBy("selecteddate", Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener { snapshot ->
                     val list = snapshot.documents.map { doc ->
