@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +24,7 @@ fun AddTransactionScreen() {
     var selected by remember { mutableStateOf(list[0]) }
     var amount by remember { mutableDoubleStateOf(0.00) }
     var isExpanded by remember { mutableStateOf(false) }
+    var transactionDate by remember { mutableStateOf("") }
 
     // hold the chosen image locally (no DB / VM needed yet)
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
@@ -57,6 +59,13 @@ fun AddTransactionScreen() {
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
+
+        OutlinedTextField(
+            value = transactionDate,
+            onValueChange = { transactionDate = it },
+            label = { Text("Date (yyyy-mm-dd)") },
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         OutlinedTextField(
             value = amount.toString(),
@@ -96,7 +105,7 @@ fun AddTransactionScreen() {
             onClick = {
                 // teammate’s callback stays the same (amount + category)
                 // (Later, when team is ready, extend callback to include receiptUri?.toString())
-                addTransactionViewModel.onAddTransaction("", "", amount, selected)
+                addTransactionViewModel.onAddTransaction("", amount, selected, transactionDate)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,7 +149,11 @@ fun AddTransactionScreen() {
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 items(list) { tx ->
-                    Text("${tx.description} - ${tx.amount} (${tx.category})")
+                    val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
+                    Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
+                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
+                        Text("Delete")
+                    }
                 }
             }
         }

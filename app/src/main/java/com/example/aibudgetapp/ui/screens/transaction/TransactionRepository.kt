@@ -22,11 +22,17 @@ class TransactionRepository {
             "description" to transaction.description,
             "amount" to transaction.amount,
             "category" to transaction.category,
+            "date" to transaction.date,
         )
         userTransactionRef()
             .add(map)
-            .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { e -> onFailure(e) }
+            .addOnSuccessListener { ref ->
+                val newId = ref.id
+                ref.update("id", newId)
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener(onFailure)
+            }
+            .addOnFailureListener(onFailure)
     }
 
     fun getTransactions(
@@ -47,7 +53,8 @@ class TransactionRepository {
                                 is Number -> v.toDouble()
                                 else -> 0.0
                             },
-                            category = data["category"] as? String ?: ""
+                            category = data["category"] as? String ?: "",
+                            date = data["date"] as? String ?: "",
                         )
                     }
                     onSuccess(list)
@@ -58,5 +65,20 @@ class TransactionRepository {
         }
     }
 
+    fun deleteTransaction(
+        id: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        if (id.isBlank()) {
+            onFailure(IllegalArgumentException("Missing id for delete"))
+            return
+        }
+        userTransactionRef()
+            .document(id)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener(onFailure)
+    }
 
 }

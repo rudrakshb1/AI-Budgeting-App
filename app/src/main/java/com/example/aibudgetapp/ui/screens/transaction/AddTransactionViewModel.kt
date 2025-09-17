@@ -5,14 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.github.mikephil.charting.components.Description
 import com.example.aibudgetapp.ocr.ParsedReceipt
 import android.util.Log
+import java.time.LocalDate
 
 class AddTransactionViewModel(
     private val repository: TransactionRepository) : ViewModel() {
@@ -54,15 +50,16 @@ class AddTransactionViewModel(
         )
     }
 
-    fun onAddTransaction(id: String, description: String, amount: Double, category: String) {
+    fun onAddTransaction(description: String, amount: Double, category: String, date: String) {
         if (amount <= 0.0 || category.isBlank()) {
             transactionError = true
         } else {
             val transaction = Transaction(
-                id = id,
+                id = "",
                 description = description,
                 amount = amount,
-                category = category
+                category = category,
+                date = date
             )
             addTransaction(t = transaction)
         }
@@ -88,13 +85,14 @@ class AddTransactionViewModel(
         merchant: String,
         total: Double,
         rawText: String,
-        imageUri: Uri
+        imageUri: Uri,
     ) {
         val tx = Transaction(
             id = "",
             description = merchant.ifBlank { "Unknown" },
             amount = total,
-            category = "Uncategorized" // later: call AutoCategorizer here
+            category = "Uncategorized", // later: call AutoCategorizer here,
+            date = LocalDate.now().toString()
         )
 
         repository.addTransaction(
@@ -116,8 +114,12 @@ class AddTransactionViewModel(
         )
     }
 
-
-
-
+    fun deleteTransaction(id: String) {
+        repository.deleteTransaction(
+            id = id,
+            onSuccess = { fetchTransactions() },
+            onFailure = { transactionError = true }
+        )
+    }
 
 }
