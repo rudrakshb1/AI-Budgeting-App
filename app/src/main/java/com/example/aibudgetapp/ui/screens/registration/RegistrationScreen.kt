@@ -27,14 +27,22 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun RegistrationScreen(
-    onRegister: (String, String) -> Unit,
+    onRegister: (email: String, password: String, firstName: String, lastName: String?) -> Unit,
     onCancel: () -> Unit,
     registrationError: Boolean,
     registrationErrorMessage: String?
 
 ) {
     var email by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+
+    val pwMatch = password == confirm
+    val firstOk = firstName.isNotBlank()
+    val canSubmit = firstOk && pwMatch && password.isNotEmpty()
+
 
     Column(
         modifier = Modifier
@@ -48,23 +56,51 @@ fun RegistrationScreen(
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
-
+        OutlinedTextField(
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = { Text("First name") },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        OutlinedTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = { Text("Last name (optional)") },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text("Password (min 6 chars)") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
+        OutlinedTextField(
+            value = confirm,
+            onValueChange = { confirm = it },
+            label = { Text("Confirm password") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth(),
+            isError = confirm.isNotEmpty() && !pwMatch
+        )
 
         Button(
-            onClick = { onRegister(email, password) },
+            onClick = {
+                onRegister(
+                    email.trim(),
+                    password,
+                    firstName.trim(),
+                    lastName.trim().takeIf { it.isNotBlank() }
+                )
+            },
+            enabled = canSubmit,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
-            Text("Register")
+            Text("Create account")
         }
         if (registrationError) {
             Text(
@@ -80,7 +116,7 @@ fun RegistrationScreen(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("have an account?")
+            Text("Have an account?")
             Spacer(Modifier.width(6.dp))
             TextButton(onClick = onCancel) {
                 Text("Login")

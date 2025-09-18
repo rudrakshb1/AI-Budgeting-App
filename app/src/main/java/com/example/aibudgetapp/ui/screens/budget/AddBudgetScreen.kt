@@ -42,11 +42,11 @@ fun BudgetScreen(
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
 
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
-    var selecteddate by remember { mutableStateOf(date[0]) }
+    // var selectedDate by remember { mutableStateOf(date[0]) }
     val type = listOf("Weekly", "Monthly")
-    var chosentype by remember { mutableStateOf(type[0]) }
+    var chosenType by remember { mutableStateOf(type[0]) }
     val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
-    var chosencategory by remember { mutableStateOf(categories[0]) }
+    var chosenCategory by remember { mutableStateOf(categories[0]) }
     var name by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf(0) }
     var isDateExpanded by remember { mutableStateOf(false) }
@@ -87,32 +87,32 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(20.dp))
 
-        ExposedDropdownMenuBox(
-            expanded = isDateExpanded,
-            onExpandedChange = { isDateExpanded = !isDateExpanded },
-        ) {
-            TextField(
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
-                value = selecteddate.toString(),
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDateExpanded) }
-            )
-            ExposedDropdownMenu(expanded = isDateExpanded, onDismissRequest = { isDateExpanded = false }) {
-                date.forEachIndexed { index, day ->
-                    DropdownMenuItem(
-                        text = { Text(text = day.toString()) },
-                        onClick = {
-                            selecteddate = date[index]
-                            isDateExpanded = false
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-
-        Text(text = "Currently selected: $selecteddate")
+//        ExposedDropdownMenuBox(
+//            expanded = isDateExpanded,
+//            onExpandedChange = { isDateExpanded = !isDateExpanded },
+//        ) {
+//            TextField(
+//                modifier = Modifier.menuAnchor().fillMaxWidth(),
+//                value = selectedDate.toString(),
+//                onValueChange = {},
+//                readOnly = true,
+//                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDateExpanded) }
+//            )
+//            ExposedDropdownMenu(expanded = isDateExpanded, onDismissRequest = { isDateExpanded = false }) {
+//                date.forEachIndexed { index, day ->
+//                    DropdownMenuItem(
+//                        text = { Text(text = day.toString()) },
+//                        onClick = {
+//                            selectedDate = date[index]
+//                            isDateExpanded = false
+//                        },
+//                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+//                    )
+//                }
+//            }
+//        }
+//
+//        Text(text = "Currently selected: $selectedDate")
 
         ExposedDropdownMenuBox(
             expanded = isTypeExpanded,
@@ -120,7 +120,7 @@ fun BudgetScreen(
         ) {
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                value = chosentype,
+                value = chosenType,
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTypeExpanded) }
@@ -130,7 +130,7 @@ fun BudgetScreen(
                     DropdownMenuItem(
                         text = { Text(text = text) },
                         onClick = {
-                            chosentype = type[index]
+                            chosenType = type[index]
                             isTypeExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -139,7 +139,7 @@ fun BudgetScreen(
             }
         }
 
-        Text(text = "Currently selected: $chosentype")
+        Text(text = "Currently selected: $chosenType")
 
         ExposedDropdownMenuBox(
             expanded = isCategoryExpanded,
@@ -147,7 +147,7 @@ fun BudgetScreen(
         ) {
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                value = chosencategory,
+                value = chosenCategory,
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
@@ -157,7 +157,7 @@ fun BudgetScreen(
                     DropdownMenuItem(
                         text = { Text(text = text) },
                         onClick = {
-                            chosencategory = categories[index]
+                            chosenCategory = categories[index]
                             isCategoryExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -166,7 +166,7 @@ fun BudgetScreen(
             }
         }
 
-        Text(text = "Currently selected: $chosencategory")
+        Text(text = "Currently selected: $chosenCategory")
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -191,7 +191,7 @@ fun BudgetScreen(
             )
         }
         Button(
-            onClick = { budgetViewModel.onAddBudget(name, selecteddate, chosentype, chosencategory, amount, checked) },
+            onClick = { budgetViewModel.onAddBudget(name, chosenType, chosenCategory, amount, checked) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)

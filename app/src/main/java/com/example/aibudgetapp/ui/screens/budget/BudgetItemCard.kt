@@ -22,9 +22,9 @@ fun BudgetItemCard(budget: Budget) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = budget.name, style = MaterialTheme.typography.titleMedium)
             Text(text = "Amount: \$${budget.amount}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Category: ${budget.chosencategory}", style = MaterialTheme.typography.bodySmall)
-            Text(text = "Type: ${budget.chosentype}", style = MaterialTheme.typography.bodySmall)
-            Text(text = "Date: ${budget.selecteddate}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "Category: ${budget.chosenCategory}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "Type: ${budget.chosenType}", style = MaterialTheme.typography.bodySmall)
+            // Text(text = "Date: ${budget.selectedDate}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
