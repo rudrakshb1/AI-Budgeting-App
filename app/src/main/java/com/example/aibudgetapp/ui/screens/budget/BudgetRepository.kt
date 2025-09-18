@@ -1,6 +1,6 @@
 package com.example.aibudgetapp.ui.screens.budget
 
-import com.example.aibudgetapp.ui.screens.transaction.Transaction
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.Query
@@ -16,17 +16,23 @@ class BudgetRepository {
         .collection("budgets")
 
     fun addBudget(budget: Budget, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        Log.d("REPOSITORY", "Firestore push: $budget")
         val map = hashMapOf(
+            "id" to budget.id,
             "name" to budget.name,
-            "selecteddate" to budget.selecteddate,
-            "chosentype" to budget.chosentype,
-            "chosencategory" to budget.chosencategory,
+            // "selecteddate" to budget.selectedDate,
+            "chosentype" to budget.chosenType,
+            "chosencategory" to budget.chosenCategory,
             "amount" to budget.amount,
             "checked" to budget.checked,
         )
         userBudgetsRef()
             .add(map)
-            .addOnSuccessListener { onSuccess() }
+            .addOnSuccessListener { ref ->
+                val newId = ref.id
+                ref.update("id", newId)
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener(onFailure) }
             .addOnFailureListener { e -> onFailure(e) }
     }
 
@@ -36,16 +42,16 @@ class BudgetRepository {
     ) {
         try {
             userBudgetsRef()
-                .orderBy("selecteddate", Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener { snapshot ->
                     val list = snapshot.documents.map { doc ->
                         val data = doc.data ?: emptyMap<String, Any?>()
                         Budget(
+                            id = (data["id"] as? String) ?: doc.id,
                             name = data["name"] as? String ?: "",
-                            selecteddate = (data["selecteddate"] as? Number)?.toInt() ?: 0,
-                            chosentype = data["chosentype"] as? String ?: "",
-                            chosencategory = data["chosencategory"] as? String ?: "",
+                            // selectedDate = (data["selecteddate"] as? Number)?.toInt() ?: 0,
+                            chosenType = data["chosentype"] as? String ?: "",
+                            chosenCategory = data["chosencategory"] as? String ?: "",
                             amount = (data["amount"] as? Number)?.toInt() ?: 0,
                             checked = data["checked"] as? Boolean ?: false
                         )
@@ -58,6 +64,21 @@ class BudgetRepository {
         }
     }
 
+    fun deleteBudget(
+        id: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        if (id.isBlank()) {
+            onFailure(IllegalArgumentException("Missing id for delete"))
+            return
+        }
+        userBudgetsRef()
+            .document(id)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener(onFailure)
+    }
 
 
 

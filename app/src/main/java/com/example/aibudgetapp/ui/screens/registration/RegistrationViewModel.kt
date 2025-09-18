@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.auth.userProfileChangeRequest
 
 
 class RegistrationViewModel : ViewModel() {
@@ -21,26 +22,25 @@ class RegistrationViewModel : ViewModel() {
     var registerErrorMessage by mutableStateOf<String?>(null)
         private set
 
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String, firstName: String, lastName: String?) {
+        registerError = false
+        registerErrorMessage = null
+        isRegistered = false
 
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Registration success
-                    isRegistered = true
-                    registerError = false
-                    registerErrorMessage = null
-
-                    val user = auth.currentUser
-                    // TODO: You can save user information to Firestore or other databases if needed.
-
-                } else {
-                    // Registration failed
+                if (!task.isSuccessful) {
                     registerError = true
-                    registerErrorMessage = task.exception?.localizedMessage
-                    // Log the exception to debug the reason for failure.
-                    task.exception?.printStackTrace()
+                    registerErrorMessage =
+                        task.exception?.localizedMessage ?: "Registration failed."
+                    return@addOnCompleteListener
                 }
+
+                val user = auth.currentUser
+                val display = if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
+
+                user?.updateProfile(userProfileChangeRequest { displayName = display })
+                isRegistered = true
             }
     }
     fun consumeRegistrationSuccess() {

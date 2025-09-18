@@ -4,6 +4,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import android.util.Log
+import com.google.firebase.firestore.Query
 
 class TransactionRepository {
 
@@ -41,7 +42,7 @@ class TransactionRepository {
     ) {
         try {
             userTransactionRef()
-                // .orderBy("date")
+                .orderBy("date", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener { snapshot ->
                     val list = snapshot.documents.map { doc ->
