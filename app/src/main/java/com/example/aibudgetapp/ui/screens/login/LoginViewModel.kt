@@ -9,6 +9,7 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 
 class LoginViewModel : ViewModel() {
@@ -35,17 +36,25 @@ class LoginViewModel : ViewModel() {
         else -> "Something went wrong. Please try again."
     }
 
+    private fun friendlyName(u: FirebaseUser?): String =
+        when {
+            u?.displayName?.isNotBlank() == true -> u.displayName!!
+            !u?.email.isNullOrBlank() -> u!!.email!!.substringBefore('@')
+            else -> "User"
+        }
+
     fun login(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     // Login success
-                    val user = auth.currentUser
+                    val u = auth.currentUser
+                    userName = friendlyName(u)
                     isLoggedIn = true
                     loginError = false
                     loginErrorMessage = null
-                    currentUid = user?.uid
-                    userName = user?.email ?: ""
+                    currentUid = u?.uid
+
                 } else {
                     // Login failed
                     isLoggedIn = false

@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                 ScreenContainer( userName = userName) //open main page if loggedIn
             } else if (showRegister) {
                 RegistrationScreen(
-                    onRegister = { email, password -> registrationViewModel.register(email, password) },
+                    onRegister = { email, password, fn, ln -> registrationViewModel.register(email, password, fn, ln) },
                     onCancel = { showRegister = false },
                     registrationError = registrationError,
                     registrationErrorMessage = registrationViewModel.registerErrorMessage
