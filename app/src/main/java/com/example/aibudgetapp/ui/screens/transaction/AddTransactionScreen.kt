@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
 import java.time.LocalDate
+import android.util.Log
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +30,15 @@ fun AddTransactionScreen() {
 
     // hold the chosen image locally (no DB / VM needed yet)
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
+    var detectedCategory by remember { mutableStateOf("") }
+    var showCustomCategoryDialog by remember { mutableStateOf(false) }
+    var customCategory by remember { mutableStateOf("") }
+    var pendingMerchant by remember { mutableStateOf("") }
+    var pendingAmount by remember { mutableStateOf(0.0) }
+    var pendingRawText by remember { mutableStateOf("") }
+    var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
+
+
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -43,12 +54,23 @@ fun AddTransactionScreen() {
 
         //Upload button (shows Camera or Gallery dialog)
         UploadPhotoButton(
-            onImagePicked = { uri ->
+            onImagePicked = { uri -> receiptUri = uri },
+            onCategoryDetected = { cat, merchant, amount, rawText, imageUri ->
+                detectedCategory = cat
+                pendingMerchant = merchant
+                pendingAmount = amount
+                pendingRawText = rawText
+                pendingImageUri = imageUri
 
-                addTransactionViewModel.onReceiptSelected(uri)
-                receiptUri = uri
+                Log.d("OCR_FLOW", "Detected merchant=$merchant, amount=$amount, category=$cat")
+
+                if (cat == "Uncategorized") {
+                    showCustomCategoryDialog = true
+                } else {
+                    selected = cat
+                }
             },
-            addTxViewModel = addTransactionViewModel   //  pass the VM
+            addTxViewModel = addTransactionViewModel
         )
 
         // Optional: let the user know something is attached
@@ -103,9 +125,25 @@ fun AddTransactionScreen() {
 
         Button(
             onClick = {
-                // teammate’s callback stays the same (amount + category)
-                // (Later, when team is ready, extend callback to include receiptUri?.toString())
-                addTransactionViewModel.onAddTransaction("", amount, selected, transactionDate)
+                val merchant = if (pendingMerchant.isNotBlank()) pendingMerchant else "Manual"
+                val amt = if (pendingAmount > 0) pendingAmount else amount
+                val category = if (detectedCategory.isNotBlank() && detectedCategory != "Uncategorized") {
+                    detectedCategory
+                } else {
+                    selected
+                }
+                val dateToSave = if (transactionDate.isNotBlank()) transactionDate
+                else LocalDate.now().toString()
+
+                Log.d("TX_DEBUG", "Saving merchant=$merchant, amount=$amt, category=$category, date=$dateToSave")
+
+                addTransactionViewModel.onAddTransaction(merchant, amt, category, dateToSave)
+
+                // reset pending values so next save starts fresh
+                pendingMerchant = ""
+                pendingAmount = 0.0
+                pendingRawText = ""
+                pendingImageUri = null
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,6 +194,50 @@ fun AddTransactionScreen() {
                     }
                 }
             }
+        }
+
+        if (loading) {
+            Text("Loading...")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                items(list) { tx ->
+                    val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
+                    Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
+                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
+                        Text("Delete")
+                    }
+                }
+            }
+        }
+
+        // Ask the user to category
+        if (showCustomCategoryDialog) {
+            AlertDialog(
+                onDismissRequest = { showCustomCategoryDialog = false },
+                title = { Text("Enter Custom Category") },
+                text = {
+                    OutlinedTextField(
+                        value = customCategory,
+                        onValueChange = { customCategory = it },
+                        label = { Text("Category") }
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (customCategory.isNotBlank()) {
+                                addTransactionViewModel.onAddTransaction("Manual", amount, customCategory, transactionDate)
+                                showCustomCategoryDialog = false
+                            }
+                        }
+                    ) { Text("Save") }
+                },
+                dismissButton = {
+                    Button(onClick = { showCustomCategoryDialog = false }) { Text("Cancel") }
+                }
+            )
         }
 
     }

@@ -25,10 +25,13 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.example.aibudgetapp.ocr.AutoCategorizer
+
 
 @Composable
 fun UploadPhotoButton(
     onImagePicked: (Uri) -> Unit,
+    onCategoryDetected: (String, String, Double, String, Uri) -> Unit,
     addTxViewModel: AddTransactionViewModel
 ) {
     val context = LocalContext.current
@@ -68,8 +71,17 @@ fun UploadPhotoButton(
                 scope.launch {
                     try {
                         val parsed = ReceiptOcr.extract(resultUri, context)
-                        addTxViewModel.addFromParsed(parsed, imageUri = resultUri)
-                        Toast.makeText(context, "Receipt cropped & saved", Toast.LENGTH_LONG).show()
+                        val detectedCategory = AutoCategorizer.guess(parsed.rawText)
+
+                        // only forward data, no saving here
+                        onCategoryDetected(
+                            detectedCategory,
+                            parsed.merchant,
+                            parsed.total,
+                            parsed.rawText,
+                            resultUri
+                        )
+                        Toast.makeText(context, "Receipt cropped & processed", Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -80,9 +92,9 @@ fun UploadPhotoButton(
     }
 
     fun launchCrop(source: Uri) {
-        val dest = newGalleryDestUri()  // cropped image will be written here (Gallery)
+        val dest = newGalleryDestUri()
         val intent = UCrop.of(source, dest)
-            .withAspectRatio(0f, 0f) // free aspect
+            .withAspectRatio(0f, 0f)
             .withMaxResultSize(3000, 3000)
             .withOptions(UCrop.Options().apply {
                 setCompressionFormat(Bitmap.CompressFormat.JPEG)
@@ -112,8 +124,17 @@ fun UploadPhotoButton(
                 scope.launch {
                     try {
                         val parsed = ReceiptOcr.extract(saved, context)
-                        addTxViewModel.addFromParsed(parsed, saved)
-                        Toast.makeText(context, "Photo saved & used", Toast.LENGTH_LONG).show()
+                        val detectedCategory = AutoCategorizer.guess(parsed.rawText)
+
+                        // only forward data, no saving here
+                        onCategoryDetected(
+                            detectedCategory,
+                            parsed.merchant,
+                            parsed.total,
+                            parsed.rawText,
+                            saved
+                        )
+                        Toast.makeText(context, "Photo processed", Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -144,7 +165,7 @@ fun UploadPhotoButton(
     ) { ok: Boolean ->
         if (ok) {
             pendingCameraCropUri?.let { src ->
-                launchCrop(src) // -> uCrop -> writes to Gallery and OCRs in callback
+                launchCrop(src)
             }
         }
         pendingCameraCropUri = null

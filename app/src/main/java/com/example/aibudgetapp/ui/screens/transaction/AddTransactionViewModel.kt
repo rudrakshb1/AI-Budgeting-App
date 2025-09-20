@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import com.example.aibudgetapp.ocr.ParsedReceipt
 import android.util.Log
 import java.time.LocalDate
+import com.example.aibudgetapp.ocr.AutoCategorizer
+
 
 class AddTransactionViewModel(
     private val repository: TransactionRepository) : ViewModel() {
@@ -51,6 +53,7 @@ class AddTransactionViewModel(
     }
 
     fun onAddTransaction(description: String, amount: Double, category: String, date: String) {
+        Log.d("TX_DEBUG", "Trying to add: desc=$description, amt=$amount, cat=$category, date=$date")
         if (amount <= 0.0 || category.isBlank()) {
             transactionError = true
         } else {
@@ -86,12 +89,13 @@ class AddTransactionViewModel(
         total: Double,
         rawText: String,
         imageUri: Uri,
+        category: String
     ) {
         val tx = Transaction(
             id = "",
             description = merchant.ifBlank { "Unknown" },
             amount = total,
-            category = "Uncategorized", // later: call AutoCategorizer here,
+            category = category, // later: call AutoCategorizer here,
             date = LocalDate.now().toString()
         )
 
@@ -105,12 +109,14 @@ class AddTransactionViewModel(
     fun addFromParsed(parsed: ParsedReceipt, imageUri: Uri) {
         // Debug log to check what OCR extracted
         Log.d("VIEWMODEL", "Saving Transaction: merchant=${parsed.merchant}, total=${parsed.total}")
+        val detectedCategory = AutoCategorizer.guess(parsed.rawText)
 
         addFromOcr(
             merchant = parsed.merchant,
             total = parsed.total,
             rawText = parsed.rawText,
-            imageUri = imageUri
+            imageUri = imageUri,
+            category = detectedCategory
         )
     }
 

@@ -18,19 +18,29 @@ import androidx.compose.ui.unit.dp
 fun ReceiptOcrScreen(
     imageUri: Uri,
     addTransactionViewModel: AddTransactionViewModel = viewModel(),
-    onOcrComplete: () -> Unit = {}   // callback to return after saving
+    onOcrComplete: () -> Unit = {},
+    onCategoryDetected: (String, String, Double, String, Uri) -> Unit = { _, _, _, _, _ -> }
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 🔹 Automatically run OCR once when the screen opens
+    // Automatically run OCR once when the screen opens
     LaunchedEffect(imageUri) {
         scope.launch {
             try {
                 val parsed = ReceiptOcr.extract(imageUri, context)
                 Log.d("OCR_SCREEN", "ParsedReceipt = $parsed")
 
-                addTransactionViewModel.addFromParsed(parsed, imageUri)
+
+
+                // NEW: fire the callback after saving
+                onCategoryDetected(
+                    AutoCategorizer.guess(parsed.rawText),
+                    parsed.merchant,
+                    parsed.total,
+                    parsed.rawText,
+                    imageUri
+                )
 
                 Toast.makeText(
                     context,
