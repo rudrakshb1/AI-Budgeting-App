@@ -52,6 +52,14 @@ class AddTransactionViewModel(
         private set
     var showCategoryDialog by mutableStateOf(false)
         private set
+    var transactionSaved by mutableStateOf(false)
+        private set
+
+    fun resetSavedFlag() {
+        transactionSaved = false
+    }
+
+
 
     fun onSaveTransaction(category: String, imageUri: Uri) {
         ocrResult?.let { parsed ->
@@ -63,6 +71,7 @@ class AddTransactionViewModel(
                 date = LocalDate.now().toString()
             )
             addTransaction(t = transaction)
+            transactionSaved = true
         }
         showCategoryDialog = false
         ocrResult = null
@@ -81,11 +90,14 @@ class AddTransactionViewModel(
     }
 
 
-    fun addTransaction(t: Transaction){
+    fun addTransaction(t: Transaction) {
         repository.addTransaction(
             transaction = t,
-            onSuccess = {transactionError = false},
-            onFailure = {transactionError = true}
+            onSuccess = {
+                transactionError = false
+                transactionSaved = true   // <- THIS covers both OCR and manual saves
+            },
+            onFailure = { transactionError = true }
         )
     }
 
