@@ -10,7 +10,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-
 @Composable
 fun CategoryDialog(
     merchant: String,
@@ -21,9 +20,7 @@ fun CategoryDialog(
 ) {
     var selectedCategory by remember { mutableStateOf("") }
     var customCategory by remember { mutableStateOf("") }
-
     val categories = listOf("Food", "Transport", "Shopping", "Bills", "Other")
-
     // format date from millis
     val formattedDate = remember(date) {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -32,7 +29,6 @@ fun CategoryDialog(
             .toLocalDate()
             .format(formatter)
     }
-
     AlertDialog(
         onDismissRequest = { /* keep open until user confirms */ },
         title = { Text("Select Category") },
@@ -41,7 +37,6 @@ fun CategoryDialog(
                 Text("Merchant: $merchant")
                 Text("Amount: $total")
                 Text("Date: $formattedDate")
-
                 categories.forEach { cat ->
                     Button(
                         onClick = { selectedCategory = cat },

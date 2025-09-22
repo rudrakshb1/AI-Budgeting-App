@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import android.content.Context
 import com.example.aibudgetapp.ocr.ReceiptOcr
+import java.util.UUID
 
 
 
@@ -48,6 +49,7 @@ class AddTransactionViewModel(
     fun onReceiptSelected(uri: Uri) {
         receiptUri = uri.toString()
     }
+
     var ocrResult by mutableStateOf<ParsedReceipt?>(null)
         private set
     var showCategoryDialog by mutableStateOf(false)
@@ -58,7 +60,6 @@ class AddTransactionViewModel(
     fun resetSavedFlag() {
         transactionSaved = false
     }
-
 
 
     fun onSaveTransaction(category: String, imageUri: Uri) {
@@ -76,6 +77,20 @@ class AddTransactionViewModel(
         showCategoryDialog = false
         ocrResult = null
     }
+    fun addTransaction(t: Transaction) {
+        Log.d("CSV_IMPORT", "Saving transaction to repository: $t")
+        repository.addTransaction(
+            transaction = t,
+            onSuccess = {
+                Log.d("CSV_IMPORT", "Successfully saved: $t")
+                fetchTransactions() // Ensure refetch
+            },
+            onFailure = {
+                Log.e("CSV_IMPORT", "Failed to save: $t")
+            }
+        )
+    }
+
 
     fun runOcr(uri: Uri, context: Context) {
         viewModelScope.launch {
@@ -90,16 +105,52 @@ class AddTransactionViewModel(
     }
 
 
-    fun addTransaction(t: Transaction) {
-        repository.addTransaction(
-            transaction = t,
-            onSuccess = {
-                transactionError = false
-                transactionSaved = true   // <- THIS covers both OCR and manual saves
-            },
-            onFailure = { transactionError = true }
-        )
+    // Just parse here:
+    fun handleOcrResult(ocrText: String, documentType: String) {
+        if (documentType == "receipt") {
+            showCategoryDialog = true
+            // Set ocrResult = parsed receipt data
+        } else if (documentType == "bank_statement") {
+            importBankStatement(ocrText) // instantly parse and save!
+        }
     }
+
+    fun importBankStatement(ocrText: String) {
+        val list = parseBankStatement(ocrText)
+        Log.d("BANK_IMPORT", "Total transactions parsed: ${list.size}")
+        list.forEach { tx ->
+            addTransaction(tx)
+        }
+        fetchTransactions()
+    }
+
+
+
+    // Just parses CSV/OCR text
+    fun parseBankStatement(ocrText: String): List<Transaction> {
+        val lines = ocrText.lines().drop(1) // skip header
+        return lines.mapNotNull { line ->
+            val parts = line.split(",")
+            // IMPORTANT: Only include these five fields, just like manual/receipt!
+            if (parts.size >= 4) {
+                val id = UUID.randomUUID().toString()   // Ensure unique id
+                val date = parts[0].trim()
+                val description = parts[1].trim()
+                val amount = parts[2].toDoubleOrNull() ?: 0.0
+                val category = ""  // (you can categorize later if needed)
+
+                // This matches what's stored in Firestore for all other transaction types
+                Transaction(
+                    id = id,
+                    description = description,
+                    amount = amount,
+                    category = category,
+                    date = date
+                )
+            } else null
+        }
+    }
+
 
     fun onAddTransaction(description: String, amount: Double, category: String, date: String) {
         if (amount <= 0.0 || category.isBlank()) {

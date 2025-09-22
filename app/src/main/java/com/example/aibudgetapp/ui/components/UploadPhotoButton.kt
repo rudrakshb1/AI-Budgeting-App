@@ -1,7 +1,5 @@
 package com.example.aibudgetapp.ui.components
 
-
-
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
@@ -204,7 +202,8 @@ fun UploadPhotoButton(
 
                     TextButton(onClick = {
                         showChooser = false
-                        csvPicker.launch("text/csv")
+                        csvPicker.launch("text/*")
+
                     }) { Text("Upload Bank Statement (CSV)") }
                 }
             },

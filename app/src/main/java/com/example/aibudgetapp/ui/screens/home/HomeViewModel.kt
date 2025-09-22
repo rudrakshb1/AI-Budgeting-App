@@ -70,7 +70,7 @@ class HomeViewModel(
             onSuccess = { list ->
                 monthlySpent = list
                     .filter { it.date.contains(yearMonth.toString(), ignoreCase = true) }
-                    .sumOf { it.amount }
+                    .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
             },
             onFailure = { e ->
                 transactionError = true
@@ -90,7 +90,8 @@ class HomeViewModel(
                 onSuccess = { list ->
                     val sum = list
                         .filter { it.date.contains(yearMonth.toString(), ignoreCase = true) }
-                        .sumOf { it.amount }
+                        .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
 
                     monthlyListTransaction.add(0, sum)
                 },
@@ -134,7 +135,10 @@ class HomeViewModel(
                             false
                         }
                     }
-                    .sumOf { it.amount }
+                    .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
+
+
             },
             onFailure = { e ->
                 transactionError = true
@@ -170,7 +174,8 @@ class HomeViewModel(
                                 false
                             }
                         }
-                        .sumOf { it.amount }
+                        .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
 
                     weeklyListTransaction.add(0, sum)
                 },
