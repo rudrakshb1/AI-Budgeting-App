@@ -14,6 +14,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
 import java.time.LocalDate
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.ActivityResult
+import com.yalantis.ucrop.UCrop
+import androidx.compose.runtime.saveable.rememberSaveable
+import android.app.Activity
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +39,32 @@ fun AddTransactionScreen(
     var transactionDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
+    var croppingInProgress by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    // --- UCrop Launcher at screen level! ---
+    val cropLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult ->
+        croppingInProgress = false
+        println("UCrop result handler called: ${result.resultCode}")
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val resultUri = UCrop.getOutput(result.data!!)
+            println("UCrop OK resultUri: $resultUri")
+            if (resultUri != null) {
+                onReceiptPicked(resultUri) // For external handler, e.g., navigation, preview, etc.
+                receiptUri = resultUri     // For this screen
+                addTransactionViewModel.runOcr(resultUri, context)
+            }
+        } else if (result.resultCode == UCrop.RESULT_ERROR && result.data != null) {
+            val cropError = UCrop.getError(result.data!!)
+            println("UCrop error: $cropError")
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            println("UCrop canceled")
+        }
+    }
+
 
     Column(
         verticalArrangement = Arrangement.Top,
