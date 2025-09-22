@@ -63,7 +63,7 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                 }
 
                 BudgetTab.SPENDING -> {
-                    SpendingScreen()
+                    SpendingScreen(viewModel)
                 }
 
                 BudgetTab.TRANSACTIONS -> {
