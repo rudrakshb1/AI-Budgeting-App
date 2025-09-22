@@ -2,42 +2,38 @@ package com.example.aibudgetapp.ui.screens.transaction
 
 import android.net.Uri
 import androidx.compose.runtime.*
-import androidx.compose.material3.*
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aibudgetapp.ocr.ReceiptOcrScreen
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.example.aibudgetapp.ocr.ParsedReceipt
 
 @Composable
 fun ReceiptFlowScreen(
     imageUri: Uri,
-    addTransactionViewModel: AddTransactionViewModel = viewModel(),
+    addTransactionViewModel: AddTransactionViewModel,
     onComplete: () -> Unit = {}
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    var merchant by remember { mutableStateOf("") }
-    var total by remember { mutableStateOf(0.0) }
-    var date by remember { mutableStateOf(System.currentTimeMillis()) }
+    val ocrResult = addTransactionViewModel.ocrResult
+    val showCategoryDialog = addTransactionViewModel.showCategoryDialog
+    val context = LocalContext.current
 
-    // Step 1: Run OCR
-    ReceiptOcrScreen(
-        imageUri = imageUri,
-        onOcrComplete = { /* optional navigation back */ },
-        onCategoryDetected = { _, m, t, _, _ ->
-            merchant = m
-            total = t
-            date = System.currentTimeMillis()
-            showDialog = true
-        }
-    )
+    // Launch OCR job via ViewModel (lifecycle-safe)
+    LaunchedEffect(imageUri) {
+        addTransactionViewModel.runOcr(imageUri, context)
+    }
 
-    // Step 2: Show category dialog after OCR
-    if (showDialog) {
+    if (showCategoryDialog && ocrResult != null) {
         CategoryDialog(
-            merchant = merchant,
-            total = total,
-            date = date,
+            merchant = ocrResult.merchant,
+            total = ocrResult.total,
+            date = ocrResult.dateEpochMs,
             addTransactionViewModel = addTransactionViewModel,
-            onSaveComplete = {
-                showDialog = false
+            onSaveComplete = { selectedCategory ->
+                addTransactionViewModel.onSaveTransaction(selectedCategory, imageUri)
                 onComplete()
             }
         )

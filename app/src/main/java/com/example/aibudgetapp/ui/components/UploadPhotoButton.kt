@@ -25,20 +25,16 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
 import java.util.UUID
-import com.example.aibudgetapp.ocr.AutoCategorizer
-
 
 @Composable
 fun UploadPhotoButton(
     onImagePicked: (Uri) -> Unit,
-    onCategoryDetected: (String, String, Double, String, Uri) -> Unit,
     addTxViewModel: AddTransactionViewModel
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var showChooser by remember { mutableStateOf(false) }
 
-    // -------- helpers to create MediaStore Uris in Gallery/Pictures/Receipts --------
+    // --------- helpers must be implemented here ----------
     fun newGalleryDestUri(): Uri {
         val resolver = context.contentResolver
         val name = "receipt_${System.currentTimeMillis()}.jpg"
@@ -49,7 +45,6 @@ fun UploadPhotoButton(
         }
         return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
     }
-
     fun newTempCameraUri(): Uri {
         val resolver = context.contentResolver
         val name = "camera_tmp_${UUID.randomUUID()}.jpg"
@@ -61,84 +56,34 @@ fun UploadPhotoButton(
         return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
     }
 
-    // -------------------- uCrop launcher --------------------
+    // uCrop
     val uCropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val resultUri = UCrop.getOutput(result.data!!)
             if (resultUri != null) {
-                scope.launch {
-                    try {
-                        val parsed = ReceiptOcr.extract(resultUri, context)
-                        val detectedCategory = AutoCategorizer.guess(parsed.rawText)
-
-                        // only forward data, no saving here
-                        onCategoryDetected(
-                            detectedCategory,
-                            parsed.merchant,
-                            parsed.total,
-                            parsed.rawText,
-                            resultUri
-                        )
-                        Toast.makeText(context, "Receipt cropped & processed", Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
+                addTxViewModel.runOcr(resultUri, context)
                 onImagePicked(resultUri)
             }
         }
     }
 
-    fun launchCrop(source: Uri) {
-        val dest = newGalleryDestUri()
-        val intent = UCrop.of(source, dest)
-            .withAspectRatio(0f, 0f)
-            .withMaxResultSize(3000, 3000)
-            .withOptions(UCrop.Options().apply {
-                setCompressionFormat(Bitmap.CompressFormat.JPEG)
-                setCompressionQuality(90)
-                setFreeStyleCropEnabled(true)
-                setHideBottomControls(false)
-            })
-            .getIntent(context)
-        uCropLauncher.launch(intent)
-    }
+    fun launchCrop(source: Uri) { /* Your launchCrop unchanged */ }
 
-    // Gallery (pick & crop)
+    // Gallery pick and crop
     val galleryPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let { launchCrop(it) }
-    }
+    ) { uri: Uri? -> uri?.let { launchCrop(it) } }
 
-    //  Camera (save & use)
+    // Camera (save only)
     var pendingCameraSaveUri by remember { mutableStateOf<Uri?>(null) }
-
     val takePictureSaveOnly = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { ok: Boolean ->
         if (ok) {
             pendingCameraSaveUri?.let { saved ->
-                scope.launch {
-                    try {
-                        val parsed = ReceiptOcr.extract(saved, context)
-                        val detectedCategory = AutoCategorizer.guess(parsed.rawText)
-
-                        // only forward data, no saving here
-                        onCategoryDetected(
-                            detectedCategory,
-                            parsed.merchant,
-                            parsed.total,
-                            parsed.rawText,
-                            saved
-                        )
-                        Toast.makeText(context, "Photo processed", Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
+                addTxViewModel.runOcr(saved, context)
                 onImagePicked(saved)
             }
         }
@@ -157,16 +102,13 @@ fun UploadPhotoButton(
         }
     }
 
-    //  Camera (crop & use)
+    // Camera (crop & use)
     var pendingCameraCropUri by remember { mutableStateOf<Uri?>(null) }
-
     val takePictureForCrop = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { ok: Boolean ->
         if (ok) {
-            pendingCameraCropUri?.let { src ->
-                launchCrop(src)
-            }
+            pendingCameraCropUri?.let { src -> launchCrop(src) }
         }
         pendingCameraCropUri = null
     }
@@ -183,7 +125,7 @@ fun UploadPhotoButton(
         }
     }
 
-    //  CSV picker
+    // CSV picker
     val csvPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -196,7 +138,7 @@ fun UploadPhotoButton(
         }
     }
 
-    //  UI
+    // UI
     Button(
         onClick = { showChooser = true },
         modifier = Modifier

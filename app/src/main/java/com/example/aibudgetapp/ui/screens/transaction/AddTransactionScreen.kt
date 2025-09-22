@@ -1,44 +1,35 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
-import android.net.Uri                                   //  NEW
+
+import android.net.Uri
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
 import java.time.LocalDate
-import android.util.Log
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionScreen() {
+fun AddTransactionScreen(
+    onReceiptPicked: (Uri) -> Unit = {}     // new parameter
+) {
     val addTransactionViewModel = remember { AddTransactionViewModel(TransactionRepository()) }
     val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
-    val list = listOf("Food & Drink", "Rent", "Gas", "Other")
-    var selected by remember { mutableStateOf(list[0]) }
-    var amount by remember { mutableDoubleStateOf(0.00) }
+
+    val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
+    var selected by remember { mutableStateOf(categories[0]) }
+    var amount by remember { mutableStateOf(0.0) }
     var isExpanded by remember { mutableStateOf(false) }
-    var transactionDate by remember { mutableStateOf("") }
+    var transactionDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
-    // hold the chosen image locally (no DB / VM needed yet)
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
-    var detectedCategory by remember { mutableStateOf("") }
-    var showCustomCategoryDialog by remember { mutableStateOf(false) }
-    var customCategory by remember { mutableStateOf("") }
-    var pendingMerchant by remember { mutableStateOf("") }
-    var pendingAmount by remember { mutableStateOf(0.0) }
-    var pendingRawText by remember { mutableStateOf("") }
-    var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
-
-
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -47,33 +38,17 @@ fun AddTransactionScreen() {
             .fillMaxSize()
             .padding(16.dp),
     ) {
-        Text(
-            text = "Add Transaction",
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        Text(text = "Add Transaction", style = MaterialTheme.typography.bodyLarge)
 
-        //Upload button (shows Camera or Gallery dialog)
         UploadPhotoButton(
-            onImagePicked = { uri -> receiptUri = uri },
-            onCategoryDetected = { cat, merchant, amount, rawText, imageUri ->
-                detectedCategory = cat
-                pendingMerchant = merchant
-                pendingAmount = amount
-                pendingRawText = rawText
-                pendingImageUri = imageUri
-
-                Log.d("OCR_FLOW", "Detected merchant=$merchant, amount=$amount, category=$cat")
-
-                if (cat == "Uncategorized") {
-                    showCustomCategoryDialog = true
-                } else {
-                    selected = cat
-                }
+            onImagePicked = { uri ->
+                // addTransactionViewModel.onReceiptSelected(uri)
+                onReceiptPicked(uri)                               // ✅ navigate to ReceiptFlow
+                receiptUri = uri
             },
             addTxViewModel = addTransactionViewModel
         )
 
-        // Optional: let the user know something is attached
         if (receiptUri != null) {
             Text(
                 text = "Receipt attached",
@@ -82,6 +57,7 @@ fun AddTransactionScreen() {
             )
         }
 
+        // everything below stays the same (manual transaction form, list, etc.)
         OutlinedTextField(
             value = transactionDate,
             onValueChange = { transactionDate = it },
@@ -91,7 +67,7 @@ fun AddTransactionScreen() {
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = (it.toDoubleOrNull() ?: 0) as Double },
+            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0 },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -108,11 +84,11 @@ fun AddTransactionScreen() {
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
             )
             ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
-                list.forEachIndexed { index, text ->
+                categories.forEach { text ->
                     DropdownMenuItem(
                         text = { Text(text = text) },
                         onClick = {
-                            selected = list[index]
+                            selected = text
                             isExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -125,29 +101,14 @@ fun AddTransactionScreen() {
 
         Button(
             onClick = {
-                val merchant = if (pendingMerchant.isNotBlank()) pendingMerchant else "Manual"
-                val amt = if (pendingAmount > 0) pendingAmount else amount
-                val category = if (detectedCategory.isNotBlank() && detectedCategory != "Uncategorized") {
-                    detectedCategory
-                } else {
-                    selected
-                }
-                val dateToSave = if (transactionDate.isNotBlank()) transactionDate
-                else LocalDate.now().toString()
-
-                Log.d("TX_DEBUG", "Saving merchant=$merchant, amount=$amt, category=$category, date=$dateToSave")
-
-                addTransactionViewModel.onAddTransaction(merchant, amt, category, dateToSave)
-
-                // reset pending values so next save starts fresh
-                pendingMerchant = ""
-                pendingAmount = 0.0
-                pendingRawText = ""
-                pendingImageUri = null
+                addTransactionViewModel.onAddTransaction(
+                    description = "",
+                    amount = amount,
+                    category = selected,
+                    date = transactionDate
+                )
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
         ) {
             Text("Save")
         }
@@ -161,15 +122,12 @@ fun AddTransactionScreen() {
         }
 
         Button(
-            onClick = {
-                addTransactionViewModel.fetchTransactions()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+            onClick = { addTransactionViewModel.fetchTransactions() },
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
         ) {
-            Text("read data")
+            Text("Read data")
         }
+
         if (transactionError) {
             Text(
                 text = "Failed to fetch transaction",
@@ -177,7 +135,8 @@ fun AddTransactionScreen() {
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
-        val list = addTransactionViewModel.transactions
+
+        val txList = addTransactionViewModel.transactions
         val loading = addTransactionViewModel.isLoading
 
         if (loading) {
@@ -186,7 +145,7 @@ fun AddTransactionScreen() {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                items(list) { tx ->
+                items(txList) { tx ->
                     val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
                     Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
                     TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
@@ -195,56 +154,5 @@ fun AddTransactionScreen() {
                 }
             }
         }
-
-        if (loading) {
-            Text("Loading...")
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            ) {
-                items(list) { tx ->
-                    val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
-                    Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
-                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
-                        Text("Delete")
-                    }
-                }
-            }
-        }
-
-        // Ask the user to category
-        if (showCustomCategoryDialog) {
-            AlertDialog(
-                onDismissRequest = { showCustomCategoryDialog = false },
-                title = { Text("Enter Custom Category") },
-                text = {
-                    OutlinedTextField(
-                        value = customCategory,
-                        onValueChange = { customCategory = it },
-                        label = { Text("Category") }
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (customCategory.isNotBlank()) {
-                                addTransactionViewModel.onAddTransaction("Manual", amount, customCategory, transactionDate)
-                                showCustomCategoryDialog = false
-                            }
-                        }
-                    ) { Text("Save") }
-                },
-                dismissButton = {
-                    Button(onClick = { showCustomCategoryDialog = false }) { Text("Cancel") }
-                }
-            )
-        }
-
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddTransactionScreenPreview() {
-    AddTransactionScreen()
 }

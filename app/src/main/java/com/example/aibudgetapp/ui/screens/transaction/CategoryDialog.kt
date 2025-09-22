@@ -1,10 +1,14 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
-
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Composable
@@ -13,38 +17,70 @@ fun CategoryDialog(
     total: Double,
     date: Long,
     addTransactionViewModel: AddTransactionViewModel = viewModel(),
-    onSaveComplete: () -> Unit
+    onSaveComplete: (String) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf("") }
+    var customCategory by remember { mutableStateOf("") }
+
+    val categories = listOf("Food", "Transport", "Shopping", "Bills", "Other")
+
+    // format date from millis
+    val formattedDate = remember(date) {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        Instant.ofEpochMilli(date)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+            .format(formatter)
+    }
 
     AlertDialog(
-        onDismissRequest = { /* keep open until user picks */ },
+        onDismissRequest = { /* keep open until user confirms */ },
         title = { Text("Select Category") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Merchant: $merchant")
                 Text("Amount: $total")
+                Text("Date: $formattedDate")
 
-                val categories = listOf("Food", "Transport", "Shopping", "Bills", "Other")
                 categories.forEach { cat ->
-                    TextButton(onClick = { selectedCategory = cat }) {
+                    Button(
+                        onClick = { selectedCategory = cat },
+                        colors = if (selectedCategory == cat) {
+                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        } else {
+                            ButtonDefaults.buttonColors()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(cat)
                     }
+                }
+                if (selectedCategory == "Other") {
+                    TextField(
+                        value = customCategory,
+                        onValueChange = { customCategory = it },
+                        label = { Text("Custom Category") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                val transaction = Transaction(
-                    id = UUID.randomUUID().toString(), // generate unique ID
-                    description = merchant,
-                    amount = total,
-                    category = selectedCategory,
-                    date = date.toString() // String because your model expects String
-                )
-                addTransactionViewModel.addTransaction(transaction)
-                onSaveComplete()
-            }) {
+            val finalCategory = if (selectedCategory == "Other") customCategory else selectedCategory
+            Button(
+                onClick = {
+                    val transaction = Transaction(
+                        id = UUID.randomUUID().toString(),
+                        description = merchant,
+                        amount = total,
+                        category = finalCategory,
+                        date = formattedDate
+                    )
+                    addTransactionViewModel.addTransaction(transaction)
+                    onSaveComplete(finalCategory)
+                },
+                enabled = finalCategory.isNotBlank()
+            ) {
                 Text("Save")
             }
         }
