@@ -6,11 +6,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
+import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
+import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFactory
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 enum class BudgetTab { OVERVIEW, SPENDING, TRANSACTIONS }
 
 @Composable
 fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
+    val repository = TransactionRepository()
+    val viewModel: AddTransactionViewModel = viewModel(
+        factory = AddTransactionViewModelFactory(repository)
+    )
     var selectedTab by remember { mutableStateOf(BudgetTab.OVERVIEW) }
 
     Scaffold(
@@ -58,7 +67,7 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                 }
 
                 BudgetTab.TRANSACTIONS -> {
-                    TransactionsScreen()
+                    TransactionsScreen(viewModel = viewModel)
                 }
             }
         }
