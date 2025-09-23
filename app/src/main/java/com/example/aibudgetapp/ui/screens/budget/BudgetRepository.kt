@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.firestore
 
 class BudgetRepository {
@@ -79,6 +80,39 @@ class BudgetRepository {
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener(onFailure)
     }
+    fun getbudgetcategory(
+        category: String,
+        onSuccess: (List<Budget>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ){
+        try {
+
+            userBudgetsRef()
+            .whereEqualTo("chosencategory", category)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val results = snapshot.documents.map { res ->
+                    val cate = res.data ?: emptyMap<String, Any?>()
+                    Budget(
+                        id = (cate["id"] as? String) ?: res.id,
+                        name = cate["name"] as? String ?: "",
+                        chosenType = cate["chosentype"] as? String ?: "",
+                        chosenCategory = cate["chosencategory"] as? String ?: "",
+                        amount = (cate["amount"] as? Number)?.toInt() ?: 0,
+                        checked = cate["checked"] as? Boolean ?: false
+                    )
+                }
+                onSuccess(results)
+            }
+            .addOnFailureListener(onFailure)
+    } catch (e: IllegalStateException) {
+        onFailure(e)
+    }
+}
+
+
+
+
 
 
 
