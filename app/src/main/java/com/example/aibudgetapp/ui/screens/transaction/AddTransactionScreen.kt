@@ -155,39 +155,5 @@ fun AddTransactionScreen(
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
-
-        Button(
-            onClick = { addTransactionViewModel.fetchTransactions() },
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-        ) {
-            Text("Read data")
-        }
-
-        if (transactionError) {
-            Text(
-                text = "Failed to fetch transaction",
-                color = Color.Red,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
-
-        val txList = addTransactionViewModel.transactions
-        val loading = addTransactionViewModel.isLoading
-
-        if (loading) {
-            Text("Loading...")
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            ) {
-                items(txList) { tx ->
-                    val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
-                    Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
-                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
-                        Text("Delete")
-                    }
-                }
-            }
-        }
     }
 }

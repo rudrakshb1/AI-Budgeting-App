@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+private const val WEEKS_PER_MONTH = 52.0 / 12.0
+
 class HomeViewModel(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository
@@ -49,14 +51,19 @@ class HomeViewModel(
     var weekLabels = mutableStateListOf<String>()
         private set
 
-
     fun getMonthlyBudget() {
+
         budgetError = false
         budgetRepository.getBudgets(
             onSuccess = { list ->
                 monthlyBudget = list
                     .filter { it.chosenType.equals("monthly", ignoreCase = true) }
                     .sumOf { it.amount }
+                weeklyBudget = list
+                    .filter { it.chosenType.equals("weekly", ignoreCase = true) }
+                    .sumOf { it.amount }
+
+                monthlyBudget += (weeklyBudget * WEEKS_PER_MONTH).toInt()
             },
             onFailure = { e ->
                 budgetError = true
