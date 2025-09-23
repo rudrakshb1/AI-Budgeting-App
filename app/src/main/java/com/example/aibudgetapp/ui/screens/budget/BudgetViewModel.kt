@@ -13,6 +13,8 @@ class BudgetViewModel(
     var budgetError by mutableStateOf(false)
         private set
 
+    var budgetSuccess by mutableStateOf(false)
+
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
@@ -29,7 +31,7 @@ class BudgetViewModel(
     fun addBudget(b: Budget) {
         repository.addBudget(
             budget = b,
-            onSuccess = { budgetError = false },
+            onSuccess = { budgetError = false; budgetSuccess = true },
             onFailure = { e -> errorMessage = e.message; budgetError = true }
         )
     }

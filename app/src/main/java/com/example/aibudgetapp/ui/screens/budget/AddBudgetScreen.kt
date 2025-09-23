@@ -40,6 +40,7 @@ fun BudgetScreen(
 ) {
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
+    val budgetSuccess by remember { derivedStateOf { budgetViewModel.budgetSuccess } }
 
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
     // var selectedDate by remember { mutableStateOf(date[0]) }
@@ -81,7 +82,8 @@ fun BudgetScreen(
         //  existing form starts here
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { name = it
+                budgetViewModel.budgetSuccess = false },
             label = { Text("Name") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -121,7 +123,7 @@ fun BudgetScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = chosenType,
-                onValueChange = {},
+                onValueChange = {budgetViewModel.budgetSuccess = false},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTypeExpanded) }
             )
@@ -148,7 +150,7 @@ fun BudgetScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = chosenCategory,
-                onValueChange = {},
+                onValueChange = {budgetViewModel.budgetSuccess = false},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
             )
@@ -172,7 +174,8 @@ fun BudgetScreen(
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toIntOrNull() ?: 0 },
+            onValueChange = { amount = it.toIntOrNull() ?: 0
+                budgetViewModel.budgetSuccess = false},
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -202,6 +205,16 @@ fun BudgetScreen(
             Text(
                 "Budget Creation failed. \nPlease check for any incorrect values",
                 color = Color.Red,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+
+        if (budgetSuccess){
+            name = ""
+            amount = 0
+            Text(
+                "Budget Successfully Created",
+                color = Color.Green,
                 modifier = Modifier.padding(16.dp),
             )
         }
