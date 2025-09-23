@@ -3,14 +3,11 @@ package com.example.aibudgetapp.ui.screens.transaction
 
 import android.net.Uri
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
 import java.time.LocalDate
@@ -31,6 +28,7 @@ fun AddTransactionScreen(
 ) {
     val addTransactionViewModel = remember { AddTransactionViewModel(TransactionRepository()) }
     val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
+    val transactionSuccess by remember { derivedStateOf { addTransactionViewModel.transactionSuccess } }
 
     val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
     var selected by remember { mutableStateOf(categories[0]) }
@@ -95,14 +93,16 @@ fun AddTransactionScreen(
         // everything below stays the same (manual transaction form, list, etc.)
         OutlinedTextField(
             value = transactionDate,
-            onValueChange = { transactionDate = it },
+            onValueChange = { transactionDate = it
+                addTransactionViewModel.transactionSuccess = false },
             label = { Text("Date (yyyy-mm-dd)") },
             modifier = Modifier.fillMaxWidth(),
         )
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0 },
+            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0
+                addTransactionViewModel.transactionSuccess = false },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -114,7 +114,7 @@ fun AddTransactionScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = selected,
-                onValueChange = {},
+                onValueChange = { addTransactionViewModel.transactionSuccess = false},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
             )
@@ -156,38 +156,14 @@ fun AddTransactionScreen(
             )
         }
 
-        Button(
-            onClick = { addTransactionViewModel.fetchTransactions() },
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-        ) {
-            Text("Read data")
-        }
-
-        if (transactionError) {
+        if (transactionSuccess) {
+            transactionDate = LocalDate.now().toString()
+            amount = 0.0
             Text(
-                text = "Failed to fetch transaction",
-                color = Color.Red,
+                text = "Transaction Saved",
+                color = Color.Green,
                 modifier = Modifier.padding(top = 16.dp),
             )
-        }
-
-        val txList = addTransactionViewModel.transactions
-        val loading = addTransactionViewModel.isLoading
-
-        if (loading) {
-            Text("Loading...")
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            ) {
-                items(txList) { tx ->
-                    val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
-                    Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
-                    TextButton(onClick = { addTransactionViewModel.deleteTransaction(tx.id) }) {
-                        Text("Delete")
-                    }
-                }
-            }
         }
     }
 }

@@ -39,12 +39,6 @@ class MainActivity : ComponentActivity() {
             val isRegistered = registrationViewModel.isRegistered
             val registrationError = registrationViewModel.registerError
 
-            LaunchedEffect(isRegistered) {
-                if (isRegistered) {
-                    showRegister = false
-                    registrationViewModel.consumeRegistrationSuccess()
-                }
-            }
 
             if (isLoggedIn) {
                 ScreenContainer( userName = userName) //open main page if loggedIn
@@ -53,7 +47,12 @@ class MainActivity : ComponentActivity() {
                     onRegister = { email, password, fn, ln -> registrationViewModel.register(email, password, fn, ln) },
                     onCancel = { showRegister = false },
                     registrationError = registrationError,
-                    registrationErrorMessage = registrationViewModel.registerErrorMessage
+                    registrationErrorMessage = registrationViewModel.registerErrorMessage,
+                    isRegistered = isRegistered,
+                    onSuccessAcknowledged = {
+                        showRegister = false
+                        registrationViewModel.consumeRegistrationSuccess()
+                    }
                 )
             } else {
                 LoginScreen( //open LoginScreen if not loggedIn
