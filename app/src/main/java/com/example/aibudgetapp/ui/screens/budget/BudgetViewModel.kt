@@ -3,6 +3,8 @@ package com.example.aibudgetapp.ui.screens.budget
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class BudgetViewModel(
@@ -19,6 +21,10 @@ class BudgetViewModel(
 
     var budgets by mutableStateOf<List<Budget>>(emptyList())
         private set
+
+    val _budgetList = MutableLiveData<List<Budget>>()
+
+    val budgetList: LiveData<List<Budget>> = _budgetList
 
     fun addBudget(b: Budget) {
         repository.addBudget(
@@ -66,6 +72,17 @@ class BudgetViewModel(
             id = id,
             onSuccess = { fetchBudgets() },
             onFailure = { budgetError = true }
+        )
+    }
+    fun fetchbudgetcategory(category: String){
+        repository.getbudgetcategory(
+            category = category,
+            onSuccess = {budgets ->
+                _budgetList.value = budgets
+            },
+            onFailure = { e ->
+                budgetError = true
+            }
         )
     }
 

@@ -78,6 +78,7 @@ dependencies {
 
     // Coroutines support for Task.await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation(libs.androidx.compose.runtime.livedata)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("com.github.yalantis:ucrop:2.2.8")
     // CameraX core libs
