@@ -5,6 +5,8 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import android.util.Log
 import com.google.firebase.firestore.Query
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 class TransactionRepository {
 
@@ -16,34 +18,43 @@ class TransactionRepository {
         .document(auth.currentUser?.uid ?: throw IllegalStateException("Not logged in"))
         .collection("transactions")
 
-    fun addTransaction(transaction: Transaction, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    fun addTransaction(
+        transaction: Transaction,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
         Log.d("REPOSITORY", "Firestore push: $transaction")
-        val map = hashMapOf(
-            "id" to transaction.id,
-            "description" to transaction.description,
-            "amount" to transaction.amount,
-            "category" to transaction.category,
-            "date" to transaction.date,
-        )
-        userTransactionRef()
-            .add(map)
-            .addOnSuccessListener { ref ->
-                val newId = ref.id
-                Log.d("REPOSITORY", "Firestore add: Success. Ref=$ref, NewID=$newId")
-                ref.update("id", newId)
-                    .addOnSuccessListener {
-                        Log.d("REPOSITORY", "ID field updated in Firestore to $newId")
-                        onSuccess()
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("REPOSITORY", "Failed to update Firestore ID: ${e.message}")
-                        onFailure(e)
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e("REPOSITORY", "Failed Firestore add: ${e.message}")
-                onFailure(e)
-            }
+        try {
+            LocalDate.parse(transaction.date)
+            val map = hashMapOf(
+                "id" to transaction.id,
+                "description" to transaction.description,
+                "amount" to transaction.amount,
+                "category" to transaction.category,
+                "date" to transaction.date,
+            )
+            userTransactionRef()
+                .add(map)
+                .addOnSuccessListener { ref ->
+                    val newId = ref.id
+                    Log.d("REPOSITORY", "Firestore add: Success. Ref=$ref, NewID=$newId")
+                    ref.update("id", newId)
+                        .addOnSuccessListener {
+                            Log.d("REPOSITORY", "ID field updated in Firestore to $newId")
+                            onSuccess()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("REPOSITORY", "Failed to update Firestore ID: ${e.message}")
+                            onFailure(e)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("REPOSITORY", "Failed Firestore add: ${e.message}")
+                    onFailure(e)
+                }
+        } catch (e: DateTimeParseException) {
+            onFailure(e)
+        }
     }
 
     fun getTransactions(
@@ -91,5 +102,4 @@ class TransactionRepository {
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener(onFailure)
     }
-
 }

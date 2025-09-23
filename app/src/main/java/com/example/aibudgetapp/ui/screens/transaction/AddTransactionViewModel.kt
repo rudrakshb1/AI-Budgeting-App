@@ -42,6 +42,8 @@ class AddTransactionViewModel(
     var transactionError: Boolean by mutableStateOf(false)
         private set
 
+    var transactionSuccess: Boolean by mutableStateOf(false)
+
     var isLoading: Boolean by mutableStateOf(false)
         private set
 
@@ -128,16 +130,18 @@ class AddTransactionViewModel(
     }
 
     fun addTransaction(t: Transaction) {
-        Log.d("CSV_IMPORT", "Saving transaction to repository: $t")
+        Log.d("Add_Transaction", "Saving transaction to repository: $t")
         repository.addTransaction(
             transaction = t,
             onSuccess = {
-                Log.d("CSV_IMPORT", "Successfully saved: $t")
+                Log.d("Add_Transaction", "Successfully saved: $t")
                 fetchTransactions()
                 updateSpendingByCategory() // NEW: call update after every change
+                transactionSuccess = true
             },
             onFailure = { e ->
-                Log.e("CSV_IMPORT", "Failed to save: $t, error=$e")
+                Log.e("Add_Transaction", "Failed to save: $t, error=$e")
+                transactionError = true
             }
         )
     }

@@ -31,6 +31,7 @@ fun AddTransactionScreen(
 ) {
     val addTransactionViewModel = remember { AddTransactionViewModel(TransactionRepository()) }
     val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
+    val transactionSuccess by remember { derivedStateOf { addTransactionViewModel.transactionSuccess } }
 
     val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
     var selected by remember { mutableStateOf(categories[0]) }
@@ -95,14 +96,16 @@ fun AddTransactionScreen(
         // everything below stays the same (manual transaction form, list, etc.)
         OutlinedTextField(
             value = transactionDate,
-            onValueChange = { transactionDate = it },
+            onValueChange = { transactionDate = it
+                addTransactionViewModel.transactionSuccess = false },
             label = { Text("Date (yyyy-mm-dd)") },
             modifier = Modifier.fillMaxWidth(),
         )
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0 },
+            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0
+                addTransactionViewModel.transactionSuccess = false },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -114,7 +117,7 @@ fun AddTransactionScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = selected,
-                onValueChange = {},
+                onValueChange = { addTransactionViewModel.transactionSuccess = false},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
             )
@@ -152,6 +155,14 @@ fun AddTransactionScreen(
             Text(
                 text = "Failed to add transaction",
                 color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+        }
+
+        if (transactionSuccess) {
+            Text(
+                text = "Transaction Saved",
+                color = Color.Green,
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
