@@ -30,7 +30,9 @@ fun RegistrationScreen(
     onRegister: (email: String, password: String, firstName: String, lastName: String?) -> Unit,
     onCancel: () -> Unit,
     registrationError: Boolean,
-    registrationErrorMessage: String?
+    registrationErrorMessage: String?,
+    isRegistered: Boolean,
+    onSuccessAcknowledged: () -> Unit
 
 ) {
     var email by remember { mutableStateOf("") }
@@ -121,6 +123,19 @@ fun RegistrationScreen(
             TextButton(onClick = onCancel) {
                 Text("Login")
             }
+        }
+
+        if (isRegistered) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = onSuccessAcknowledged,
+                title = { Text("Account created") },
+                text = { Text("Your account has been created successfully. Please log in.") },
+                confirmButton = {
+                    TextButton(onClick = onSuccessAcknowledged) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }
