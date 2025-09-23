@@ -3,14 +3,11 @@ package com.example.aibudgetapp.ui.screens.transaction
 
 import android.net.Uri
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.ui.components.UploadPhotoButton
 import java.time.LocalDate
@@ -160,6 +157,8 @@ fun AddTransactionScreen(
         }
 
         if (transactionSuccess) {
+            transactionDate = LocalDate.now().toString()
+            amount = 0.0
             Text(
                 text = "Transaction Saved",
                 color = Color.Green,
