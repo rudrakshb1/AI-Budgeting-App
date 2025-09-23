@@ -36,22 +36,32 @@ class BudgetViewModel(
         )
     }
 
-    fun onAddBudget(name: String, chosentype: String, chosencategory: String, amount: Int, checked: Boolean){
+    fun onAddBudget(
+        name: String,
+        chosentype: String,
+        chosencategory: String,
+        amount: Int,
+        checked: Boolean,
+        startDate: String?,
+        endDate: String?
+    ) {
         if (amount <= 0 || name.isBlank()) {
             budgetError = true
-        } else{
+        } else {
             val budget = Budget(
                 id = "",
                 name = name,
-                // selectedDate = selecteddate,
                 chosenType = chosentype,
                 chosenCategory = chosencategory,
                 amount = amount,
-                checked = checked
+                checked = checked,
+                startDate = startDate,
+                endDate = endDate
             )
             addBudget(budget)
         }
     }
+
 
     fun fetchBudgets() {
         isLoading = true

@@ -41,6 +41,9 @@ fun BudgetScreen(
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
     val budgetSuccess by remember { derivedStateOf { budgetViewModel.budgetSuccess } }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+
 
     val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
     // var selectedDate by remember { mutableStateOf(date[0]) }
@@ -85,6 +88,22 @@ fun BudgetScreen(
             onValueChange = { name = it
                 budgetViewModel.budgetSuccess = false },
             label = { Text("Name") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        OutlinedTextField(
+            value = startDate,
+            onValueChange = { startDate = it },
+            label = { Text("Start Date (yyyy-mm-dd)") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = endDate,
+            onValueChange = { endDate = it },
+            label = { Text("End Date (yyyy-mm-dd)") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
@@ -194,7 +213,7 @@ fun BudgetScreen(
             )
         }
         Button(
-            onClick = { budgetViewModel.onAddBudget(name, chosenType, chosenCategory, amount, checked) },
+            onClick = { budgetViewModel.onAddBudget(name, chosenType, chosenCategory, amount, checked, startDate, endDate) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
