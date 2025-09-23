@@ -3,7 +3,6 @@ package com.example.aibudgetapp.ui.components
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
-import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
 import android.widget.Toast
@@ -16,15 +15,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.aibudgetapp.ocr.ReceiptOcr
 import com.example.aibudgetapp.ui.parseCsv
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
-import com.yalantis.ucrop.UCrop
-import kotlinx.coroutines.launch
+// import com.yalantis.ucrop.UCrop // (uncomment if you re-enable cropping)
 import java.util.UUID
+import java.io.File
+import android.util.Log
+import android.content.Intent
+import androidx.core.content.FileProvider
 
 @Composable
 fun UploadPhotoButton(
@@ -32,20 +34,10 @@ fun UploadPhotoButton(
     addTxViewModel: AddTransactionViewModel
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var showChooser by remember { mutableStateOf(false) }
-
-    // -------- helpers to create MediaStore Uris in Gallery/Pictures/Receipts --------
-    fun newGalleryDestUri(): Uri {
-        val resolver = context.contentResolver
-        val name = "receipt_${System.currentTimeMillis()}.jpg"
-        val cv = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Receipts")
-        }
-        return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
-    }
+    // var croppingInProgress by rememberSaveable { mutableStateOf(false) } // cropping disabled
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showCropChoiceDialog by remember { mutableStateOf(false) }
 
     fun newTempCameraUri(): Uri {
         val resolver = context.contentResolver
@@ -58,111 +50,62 @@ fun UploadPhotoButton(
         return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
     }
 
-    // -------------------- uCrop launcher --------------------
+    // ---- UCrop/cropping disabled, but code left commented
+    /*
     val uCropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
+        croppingInProgress = false
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val resultUri = UCrop.getOutput(result.data!!)
-            if (resultUri != null) {
-                scope.launch {
-                    try {
-                        val parsed = ReceiptOcr.extract(resultUri, context)
-                        addTxViewModel.addFromParsed(parsed, imageUri = resultUri)
-                        Toast.makeText(context, "Receipt cropped & saved", Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
+            val croppedUri = UCrop.getOutput(result.data!!)
+            if (croppedUri != null) {
+                Log.d("UCROP", "Cropped output URI: $croppedUri")
+                val cacheFile = File(croppedUri.path ?: "")
+                Log.d("UCROP", "Cropped cache file size: ${cacheFile.length()}")
+                val resolver = context.contentResolver
+                val filename = "receipt_cropped_${System.currentTimeMillis()}.jpg"
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Receipts")
                 }
-                onImagePicked(resultUri)
+                val galleryUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                if (galleryUri != null) {
+                    resolver.openInputStream(croppedUri)?.use { input ->
+                        resolver.openOutputStream(galleryUri)?.use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    Toast.makeText(context, "Cropped image saved to Gallery", Toast.LENGTH_LONG).show()
+                    addTxViewModel.runOcr(galleryUri, context)
+                    onImagePicked(galleryUri)
+                } else {
+                    Toast.makeText(context, "Failed to save cropped image to Gallery", Toast.LENGTH_SHORT).show()
+                }
             }
+        } else if (result.resultCode == UCrop.RESULT_ERROR && result.data != null) {
+            val cropError = UCrop.getError(result.data!!)
+            Toast.makeText(context, "Crop error: $cropError", Toast.LENGTH_LONG).show()
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(context, "Crop canceled", Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun launchCrop(source: Uri) {
-        val dest = newGalleryDestUri()  // cropped image will be written here (Gallery)
-        val intent = UCrop.of(source, dest)
-            .withAspectRatio(0f, 0f) // free aspect
-            .withMaxResultSize(3000, 3000)
-            .withOptions(UCrop.Options().apply {
-                setCompressionFormat(Bitmap.CompressFormat.JPEG)
-                setCompressionQuality(90)
-                setFreeStyleCropEnabled(true)
-                setHideBottomControls(false)
-            })
-            .getIntent(context)
-        uCropLauncher.launch(intent)
-    }
+    fun copyToCache(srcUri: Uri): Uri? { ... }
 
-    // Gallery (pick & crop)
+    fun launchCrop(source: Uri) { ... }
+    */
+
+    // --- Gallery picker triggers OCR and save directly (no crop)
     val galleryPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        uri?.let { launchCrop(it) }
-    }
-
-    //  Camera (save & use)
-    var pendingCameraSaveUri by remember { mutableStateOf<Uri?>(null) }
-
-    val takePictureSaveOnly = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { ok: Boolean ->
-        if (ok) {
-            pendingCameraSaveUri?.let { saved ->
-                scope.launch {
-                    try {
-                        val parsed = ReceiptOcr.extract(saved, context)
-                        addTxViewModel.addFromParsed(parsed, saved)
-                        Toast.makeText(context, "Photo saved & used", Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-                onImagePicked(saved)
-            }
-        }
-        pendingCameraSaveUri = null
-    }
-
-    val cameraSavePermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted: Boolean ->
-        if (granted) {
-            val dest = newGalleryDestUri()
-            pendingCameraSaveUri = dest
-            takePictureSaveOnly.launch(dest)
-        } else {
-            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
+        uri?.let {
+            addTxViewModel.runOcr(it, context)
+            onImagePicked(it)
         }
     }
 
-    //  Camera (crop & use)
-    var pendingCameraCropUri by remember { mutableStateOf<Uri?>(null) }
-
-    val takePictureForCrop = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { ok: Boolean ->
-        if (ok) {
-            pendingCameraCropUri?.let { src ->
-                launchCrop(src) // -> uCrop -> writes to Gallery and OCRs in callback
-            }
-        }
-        pendingCameraCropUri = null
-    }
-
-    val cameraCropPermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted: Boolean ->
-        if (granted) {
-            val tmp = newTempCameraUri()
-            pendingCameraCropUri = tmp
-            takePictureForCrop.launch(tmp)
-        } else {
-            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    //  CSV picker
     val csvPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -175,12 +118,64 @@ fun UploadPhotoButton(
         }
     }
 
-    //  UI
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { ok: Boolean ->
+        if (ok) {
+            // Instead of crop dialog, trigger OCR + save directly on camera image
+            pendingCameraUri?.let {
+                addTxViewModel.runOcr(it, context)
+                onImagePicked(it)
+                pendingCameraUri = null
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted: Boolean ->
+        if (granted) {
+            val tmpUri = newTempCameraUri()
+            pendingCameraUri = tmpUri
+            takePictureLauncher.launch(tmpUri)
+        } else {
+            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /*
+    // Optional: keep crop dialog logic commented out for future use
+    if (showCropChoiceDialog && pendingCameraUri != null) {
+        AlertDialog(
+            onDismissRequest = { showCropChoiceDialog = false },
+            title = { Text("Select Action") },
+            text = { Text("Do you want to crop the image?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCropChoiceDialog = false
+                    val cacheUri = copyToCache(pendingCameraUri!!)
+                    cacheUri?.let { launchCrop(it) }
+                    pendingCameraUri = null
+                }) { Text("Crop") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showCropChoiceDialog = false
+                    addTxViewModel.runOcr(pendingCameraUri!!, context)
+                    onImagePicked(pendingCameraUri!!)
+                    pendingCameraUri = null
+                }) { Text("Use As Is") }
+            }
+        )
+    }
+    */
+
     Button(
         onClick = { showChooser = true },
         modifier = Modifier
             .padding(top = 24.dp)
-            .fillMaxWidth(0.8f)
+            .fillMaxWidth(0.8f),
+        enabled = true
     ) {
         Icon(imageVector = Icons.Filled.Camera, contentDescription = "Camera")
         Spacer(modifier = Modifier.width(8.dp))
@@ -195,13 +190,8 @@ fun UploadPhotoButton(
                 Column {
                     TextButton(onClick = {
                         showChooser = false
-                        cameraSavePermission.launch(Manifest.permission.CAMERA)
-                    }) { Text("Camera (save)") }
-
-                    TextButton(onClick = {
-                        showChooser = false
-                        cameraCropPermission.launch(Manifest.permission.CAMERA)
-                    }) { Text("Camera (crop)") }
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }) { Text("Camera") }
 
                     TextButton(onClick = {
                         showChooser = false
@@ -212,7 +202,8 @@ fun UploadPhotoButton(
 
                     TextButton(onClick = {
                         showChooser = false
-                        csvPicker.launch("text/csv")
+                        csvPicker.launch("text/*")
+
                     }) { Text("Upload Bank Statement (CSV)") }
                 }
             },

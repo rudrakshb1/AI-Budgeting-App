@@ -29,11 +29,21 @@ class TransactionRepository {
             .add(map)
             .addOnSuccessListener { ref ->
                 val newId = ref.id
+                Log.d("REPOSITORY", "Firestore add: Success. Ref=$ref, NewID=$newId")
                 ref.update("id", newId)
-                    .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener(onFailure)
+                    .addOnSuccessListener {
+                        Log.d("REPOSITORY", "ID field updated in Firestore to $newId")
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("REPOSITORY", "Failed to update Firestore ID: ${e.message}")
+                        onFailure(e)
+                    }
             }
-            .addOnFailureListener(onFailure)
+            .addOnFailureListener { e ->
+                Log.e("REPOSITORY", "Failed Firestore add: ${e.message}")
+                onFailure(e)
+            }
     }
 
     fun getTransactions(
