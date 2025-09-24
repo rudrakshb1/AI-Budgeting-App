@@ -65,7 +65,7 @@ fun SpendingScreen(
     Spacer(modifier = Modifier.height(32.dp))
     Text("Budget vs Spending", style = MaterialTheme.typography.titleMedium)
 
-    // ---- Pie Chart ----
+    // ---- Pie Chart (visual enhanced) ----
     AndroidView(
         factory = { context ->
             PieChart(context).apply {
@@ -73,18 +73,34 @@ fun SpendingScreen(
                 val dataSet = PieDataSet(entries, "").apply {
                     colors = colorPalette
                     valueTextSize = 16f
-                    sliceSpace = 4f
+                    sliceSpace = 10f                // Visual space
+                    selectionShift = 14f           // Slice pops on tap
+                    yValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
+                    xValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
+                    valueLinePart1Length = 0.5f
+                    valueLinePart2Length = 0.6f
                 }
-                this.data = PieData(dataSet)
+                this.data = PieData(dataSet).apply {
+                    setValueTextColor(android.graphics.Color.DKGRAY)
+                    setValueTextSize(16f)
+                }
+                setUsePercentValues(true)
+                setEntryLabelColor(android.graphics.Color.DKGRAY)
+                setEntryLabelTextSize(14f)
+                holeRadius = 65f
+                transparentCircleRadius = 69f
+                setCenterText("Budget\nSummary")
+                setCenterTextSize(18f)
+                setDrawEntryLabels(true)
+                setExtraOffsets(18f, 0f, 18f, 24f)
                 description.isEnabled = false
-                legend.apply {
-                    isEnabled = true
-                    textSize = 14f
-                    verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
-                    horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-                    orientation = Legend.LegendOrientation.HORIZONTAL
-                    xEntrySpace = 20f
-                }
+                legend.isEnabled = true
+                legend.textSize = 14f
+                legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                legend.orientation = Legend.LegendOrientation.HORIZONTAL
+                legend.xEntrySpace = 20f
+                animateY(900)
             }
         },
         modifier = Modifier
@@ -108,19 +124,38 @@ fun SpendingScreen(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    
+    // ---- Bar Chart: Per-category spending (ALL transactions, not filtered) ----
 
-
-    // ---- Bar Chart: Per-category spending ----
+    val allCategories = listOf("Food", "Drink", "Groceries", "Transport", "Shopping", "Bills", "Other")
     val maxCategoriesToShow = 6
-    val sortedEntries = spending.value.entries.sortedByDescending { it.value }
-    val topSpending = sortedEntries.take(maxCategoriesToShow)
-    val otherTotal = sortedEntries.drop(maxCategoriesToShow).sumOf { it.value }
-    val displaySpending = if (otherTotal > 0)
-        topSpending.map { it.key to it.value } + listOf("Other" to otherTotal)
-    else
-        topSpending.map { it.key to it.value }
 
+// Use ALL transactions, not filtered by budget/date
+    val allCategorySpending = allCategories.map { cat ->
+        cat to addTransactionViewModel.transactions.filter { it.category == cat }.sumOf { it.amount ?: 0.0 }
+    }
+    val sortedAllEntries = allCategorySpending.sortedByDescending { it.second }
+    val topSpendingAll = sortedAllEntries.take(maxCategoriesToShow)
+    val otherTotalAll = sortedAllEntries.drop(maxCategoriesToShow).sumOf { it.second }
+    val displaySpending = if (otherTotalAll > 0)
+        topSpendingAll + listOf("Other" to otherTotalAll)
+    else
+        topSpendingAll
+
+    /* // --- Filtering by budget/date range (use if needed for other cases) ---
+    val categorySpending = allCategories.map { cat ->
+        cat to filteredTxns.filter { it.category == cat }.sumOf { it.amount ?: 0.0 }
+    }
+    val sortedEntries = categorySpending.sortedByDescending { it.second }
+    val topSpending = sortedEntries.take(maxCategoriesToShow)
+    val otherTotal = sortedEntries.drop(maxCategoriesToShow).sumOf { it.second }
+    val displaySpending = if (otherTotal > 0)
+        topSpending + listOf("Other" to otherTotal)
+    else
+        topSpending
+    */
+
+// ---- Bar Chart AndroidView ----
+    Spacer(modifier = Modifier.height(24.dp))
     AndroidView(
         factory = { context ->
             BarChart(context).apply {
@@ -130,17 +165,29 @@ fun SpendingScreen(
                 val dataSet = BarDataSet(entries, "Categories").apply {
                     colors = colorPalette
                     valueTextSize = 16f
+                    valueTextColor = android.graphics.Color.DKGRAY
+                    setDrawValues(true)
                 }
                 val data = BarData(dataSet)
+                data.barWidth = 0.5f
                 this.data = data
                 description.isEnabled = false
+                setDrawValueAboveBar(true)
+                setFitBars(true)
+                animateY(900)
                 xAxis.apply {
                     valueFormatter = IndexAxisValueFormatter(displaySpending.map { it.first })
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
+                    setDrawAxisLine(true)
                     granularity = 1f
-                    textSize = 12f
-                    labelRotationAngle = -45f
+                    textSize = 14f
+                    labelRotationAngle = -22f
+                }
+                axisLeft.apply {
+                    axisMinimum = 0f
+                    textSize = 13f
+                    setDrawGridLines(true)
                 }
                 axisRight.isEnabled = false
                 legend.isEnabled = false
@@ -150,4 +197,5 @@ fun SpendingScreen(
             .fillMaxWidth()
             .height(250.dp)
     )
+
 }
