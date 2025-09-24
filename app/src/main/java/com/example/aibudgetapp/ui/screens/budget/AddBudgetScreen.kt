@@ -32,7 +32,7 @@ fun BudgetScreen(
     var checked by remember { mutableStateOf(true) }
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
-    // --- Auto Start & End Date ---
+    // --- Auto-calculate end date whenever start/type changes ---
     val endDate = if (recursive != 0) {
         val start = LocalDate.parse(startDate)
         if (chosenType.equals("Weekly", ignoreCase = true)) {
@@ -48,7 +48,6 @@ fun BudgetScreen(
     } else {
         startDate
     }
-
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -80,6 +79,7 @@ fun BudgetScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
+
         // --- Editable START date
         OutlinedTextField(
             value = startDate,
@@ -89,7 +89,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- System-calculated END date
+        // --- Editable Recursive
         OutlinedTextField(
             value = recursive.toString(),
             onValueChange = { recursive = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
