@@ -16,6 +16,9 @@ import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import java.time.LocalDate
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+
 
 @Composable
 fun SpendingScreen(
@@ -24,25 +27,67 @@ fun SpendingScreen(
 ) {
     val spending = addTransactionViewModel.spendingByCategory.collectAsState(initial = emptyMap())
 
+    // ===== NEW: Period Toggle =====
+    val periods = listOf("Monthly", "Weekly")
+    var selectedPeriod by remember { mutableStateOf(periods[0]) }
+
+    // Simple Segmented Toggle UI
+    Row(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+        periods.forEach { period ->
+            Button(
+                onClick = { selectedPeriod = period },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedPeriod == period) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surface
+                ),
+                modifier = Modifier.padding(end = 8.dp)
+            ) { Text(period) }
+        }
+    }
+
+
+    val today = java.time.LocalDate.now()
+    val startOfWeek = today.with(java.time.DayOfWeek.MONDAY)
+    val endOfWeek = startOfWeek.plusDays(6)
+
+
     // --- Helper for safe date parsing ---
     val safeParse: (String?) -> LocalDate? = { dateStr ->
         try { dateStr?.replace("/", "-")?.let { LocalDate.parse(it) } }
         catch (e: Exception) { null }
     }
 
-    // --- Filter transactions by budget date range ---
-    val filteredTxns = addTransactionViewModel.transactions.filter { tx ->
-        val txDate = safeParse(tx.date)
-        val start = safeParse(selectedBudget.startDate)
-        val end = safeParse(selectedBudget.endDate)
-        txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
+    // ===== Filtered Transactions by Period =====
+    val filteredTxns = when (selectedPeriod) {
+        "Monthly" -> addTransactionViewModel.transactions.filter { tx ->
+            val txDate = safeParse(tx.date)
+            val start = safeParse(selectedBudget.startDate)
+            val end = safeParse(selectedBudget.endDate)
+            txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
+        }
+        "Weekly" -> addTransactionViewModel.transactions.filter { tx ->
+            val txDate = safeParse(tx.date)
+            val start = safeParse(selectedBudget.startDate)
+            val end = safeParse(selectedBudget.endDate)
+            txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
+        }
+
+        else -> addTransactionViewModel.transactions
     }
 
-    // --- Calculate totals ---
+
+    // --- Calculate budget for the selected period ---
+    val budgetAmount = if (selectedPeriod == "Weekly") {
+        // Calculate 1 week's worth of the monthly budget (simple version, divide by 4)
+        selectedBudget.amount / 4
+    } else {
+        // Use full monthly budget
+        selectedBudget.amount
+    }
     val totalSpent = filteredTxns.sumOf { it.amount ?: 0.0 }
-    val budgetAmount = selectedBudget.amount
     val overspent = if (totalSpent > budgetAmount) totalSpent - budgetAmount else 0.0
     val saving = if (totalSpent < budgetAmount) budgetAmount - totalSpent else 0.0
+
 
     // --- Pie chart slices ---
     val pieSlices = mutableListOf<Pair<String, Float>>().apply {
