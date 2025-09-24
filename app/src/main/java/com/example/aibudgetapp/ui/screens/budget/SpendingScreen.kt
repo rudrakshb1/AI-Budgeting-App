@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.BarChart
@@ -14,91 +13,42 @@ import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import java.time.LocalDate
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import com.example.aibudgetapp.ui.screens.transaction.Period
-import com.github.mikephil.charting.formatter.ValueFormatter
-
-
-
 
 @Composable
 fun SpendingScreen(
     addTransactionViewModel: AddTransactionViewModel,
     selectedBudget: Budget
 ) {
-    val spending = addTransactionViewModel.spendingByCategory.collectAsState(initial = emptyMap())
-
-    // ===== NEW: Period Toggle =====
-  //  val periods = listOf("Monthly", "Weekly")
-  //  var selectedPeriod by remember { mutableStateOf(periods[0]) }
-
-
-
-
-   // Row(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
-    //    periods.forEach { period ->
-   //         Button(
-    //            onClick = {
-    //                selectedPeriod = period
-     //               addTransactionViewModel.setPeriod(
-     //                   if (period == "Weekly") Period.WEEK else Period.MONTH
-      //              )
-     //              // addTransactionViewModel.fetchTransactions() // Fetch transactions after period change
-      //          },
-       //         colors = ButtonDefaults.buttonColors(
-        //            containerColor = if (selectedPeriod == period) MaterialTheme.colorScheme.primary
-         //           else MaterialTheme.colorScheme.surface
-         //       ),
-         //       modifier = Modifier.padding(end = 8.dp)
-         //   ) { Text(period) }
-       // }
-   // }
-
-
-
-    val today = java.time.LocalDate.now()
-    val startOfWeek = today.with(java.time.DayOfWeek.MONDAY)
-    val endOfWeek = startOfWeek.plusDays(6)
-
-
     // --- Helper for safe date parsing ---
     val safeParse: (String?) -> LocalDate? = { dateStr ->
-        try { dateStr?.replace("/", "-")?.let { LocalDate.parse(it) } }
-        catch (e: Exception) { null }
+        try {
+            dateStr?.replace("/", "-")?.let { LocalDate.parse(it) }
+        } catch (e: Exception) { null }
     }
 
-    // ===== Filtered Transactions by Period =====
-    val filteredTxns = when (selectedBudget.chosenType) {
-        "Monthly" -> addTransactionViewModel.transactions.filter { tx ->
-            val txDate = safeParse(tx.date)
-            val start = safeParse(selectedBudget.startDate)
-            val end = safeParse(selectedBudget.endDate)
-            txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
-        }
-        "Weekly" -> addTransactionViewModel.transactions.filter { tx ->
-            val txDate = safeParse(tx.date)
-            val start = safeParse(selectedBudget.startDate)
-            val end = safeParse(selectedBudget.endDate)
-            txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
-        }
-        else -> addTransactionViewModel.transactions
+    // ===== Filtered Transactions by Budget (Option A: selected category only) =====
+    val filteredTxns = addTransactionViewModel.transactions.filter { tx ->
+        val txDate = safeParse(tx.date)
+        val start = safeParse(selectedBudget.startDate)
+        val end = safeParse(selectedBudget.endDate)
+        txDate != null && start != null && end != null &&
+                txDate >= start && txDate <= end &&
+                tx.category == selectedBudget.chosenCategory //  match chosen category
     }
 
+    // --- Calculate budget + totals for the SELECTED CATEGORY only ---
+    val budgetAmount = selectedBudget.amount.toDouble()
+    val totalSpent = filteredTxns
+        .filter { it.category == selectedBudget.chosenCategory } // only this category
+        .sumOf { it.amount ?: 0.0 }
 
-
-    // --- Calculate budget + totals ---
-    val budgetAmount = selectedBudget.amount.toDouble()  //  Always use what user set, no divide/multiply
-
-    val totalSpent = filteredTxns.sumOf { it.amount ?: 0.0 }
     val overspent = if (totalSpent > budgetAmount) totalSpent - budgetAmount else 0.0
     val saving = if (totalSpent < budgetAmount) budgetAmount - totalSpent else 0.0
 
-
-
-    // --- Pie chart slices ---
+    // --- Pie Chart slices, single declaration ---
     val pieSlices = mutableListOf<Pair<String, Float>>().apply {
         add("Budget" to budgetAmount.toFloat())
         add("Spending" to totalSpent.toFloat())
@@ -109,16 +59,20 @@ fun SpendingScreen(
         }
     }
 
+    // --- Debug print ---
+    LaunchedEffect(filteredTxns) {
+        println("Filtered Txns: ${filteredTxns.size}")
+        println("Total Spent: $totalSpent")
+        println("Pie Slices: $pieSlices")
+        println("Selected Category: ${selectedBudget.chosenCategory}")
+    }
+
     val colorPalette = listOf(
-        android.graphics.Color.parseColor("#5DA5DA"), // Soft Blue
-        android.graphics.Color.parseColor("#FAA43A"), // Warm Orange
-        android.graphics.Color.parseColor("#60BD68"), // Fresh Green
-
+        android.graphics.Color.parseColor("#5DA5DA"), // Blue = Budget
+        android.graphics.Color.parseColor("#FAA43A"), // Orange = Spending
+        android.graphics.Color.parseColor("#60BD68"), // Green = Remaining
+        android.graphics.Color.parseColor("#F17CB0")  // Pink = Overspent
     )
-
-
-    Spacer(modifier = Modifier.height(32.dp))
-    Text("Budget vs Spending", style = MaterialTheme.typography.titleMedium)
 
     // ---- Pie Chart ----
     AndroidView(
@@ -138,7 +92,8 @@ fun SpendingScreen(
                         }
                     })
                 }
-                setUsePercentValues(false) // show actual numbers
+
+                setUsePercentValues(false)
                 holeRadius = 65f
                 transparentCircleRadius = 69f
                 setCenterText("Budget\nSummary")
@@ -167,105 +122,64 @@ fun SpendingScreen(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // ---- Bar Chart: Per-category spending (ALL transactions, not filtered) ----
+    // --- Define your desired categories ---
+    val fixedCategories = listOf(
+        "Food & Drink", "Rent", "Vacation", "Groceries", "Transport", "Bills"
+    )
 
-    val allCategories = listOf("Food & Drink", "Rent","Groceries", "Transport", "Shopping", "Bills", "Other")
-    val maxCategoriesToShow = 6
+// --- Group transactions globally, sum each category ---
+    val transactionByCategory = addTransactionViewModel.transactions.groupBy { it.category }
 
-// Use ALL transactions, not filtered by budget/date
-    val allCategorySpending = allCategories.map { cat ->
-        cat to addTransactionViewModel.transactions.filter { it.category == cat }.sumOf { it.amount ?: 0.0 }
+    val categorySpending = fixedCategories.map { cat ->
+        cat to (transactionByCategory[cat]?.sumOf { it.amount ?: 0.0 } ?: 0.0)
     }
-    val sortedAllEntries = allCategorySpending.sortedByDescending { it.second }
-    val topSpendingAll = sortedAllEntries.take(maxCategoriesToShow)
-    val otherTotalAll = sortedAllEntries.drop(maxCategoriesToShow).sumOf { it.second }
-    val displaySpending = if (otherTotalAll > 0)
-        topSpendingAll + listOf("Other" to otherTotalAll)
-    else
-        topSpendingAll
 
-    /* // --- Filtering by budget/date range (needed for other cases) ---
-    val categorySpending = allCategories.map { cat ->
-        cat to filteredTxns.filter { it.category == cat }.sumOf { it.amount ?: 0.0 }
-    }
-    val sortedEntries = categorySpending.sortedByDescending { it.second }
-    val topSpending = sortedEntries.take(maxCategoriesToShow)
-    val otherTotal = sortedEntries.drop(maxCategoriesToShow).sumOf { it.second }
-    val displaySpending = if (otherTotal > 0)
-        topSpending + listOf("Other" to otherTotal)
-    else
-        topSpending
-    */
+// --- Sum everything NOT in your fixed list under "Other" ---
+    val otherSpending = addTransactionViewModel.transactions
+        .filter { it.category !in fixedCategories }
+        .sumOf { it.amount ?: 0.0 }
 
-// ---- Bar Chart: Per-category spending ----
+    val allSpending = categorySpending + listOf("Other" to otherSpending)
+
+// --- This guarantees you always have all bars, even zeroes ---
+// If you want to filter out zero bars, use .filter { it.second > 0 } instead
+
+    val displaySpending = allSpending
+
     Spacer(modifier = Modifier.height(24.dp))
+
     AndroidView(
         factory = { context ->
             BarChart(context).apply {
-                //  Step 1: Fixed categories
-                val fixedCategories = listOf(
-                    "Food & Drink",
-                    "Rent",
-                    "Groceries",
-                    "Transport",
-                    "Shopping",
-                    "Bills"
-                )
-
-
-                //  Step 2: Group transactions by category
-                val transactionByCategory = addTransactionViewModel.transactions.groupBy { it.category }
-
-                //  Step 3: Sum spending for known categories
-                val categorySpending = fixedCategories.map { cat ->
-                    cat to (transactionByCategory[cat]?.sumOf { it.amount ?: 0.0 } ?: 0.0)
-                }
-
-                //  Step 4: Lump everything else into "Other"
-                val otherSpending = addTransactionViewModel.transactions
-                    .filter { it.category !in fixedCategories }
-                    .sumOf { it.amount ?: 0.0 }
-
-                //  Step 5: Build final display list
-                val allSpending = if (otherSpending > 0) {
-                    categorySpending + listOf("Other" to otherSpending)
-                } else categorySpending
-
-                //  Step 6: Remove empty & sort
-                val displaySpending = allSpending.filter { it.second > 0 }.sortedByDescending { it.second }
-
-                // ---- Chart entries ----
                 val entries = displaySpending.mapIndexed { idx, entry ->
                     BarEntry(idx.toFloat(), entry.second.toFloat())
                 }
-
                 val dataSet = BarDataSet(entries, "Categories").apply {
                     colors = listOf(
-                        android.graphics.Color.parseColor("#90CAF9"), // light blue
-                        android.graphics.Color.parseColor("#A5D6A7"), // soft green
-                        android.graphics.Color.parseColor("#FFF59D"), // pastel yellow
-                        android.graphics.Color.parseColor("#FFAB91"), // peach
-                        android.graphics.Color.parseColor("#CE93D8"), // lavender
-                        android.graphics.Color.parseColor("#B0BEC5"), // grey
-                        android.graphics.Color.parseColor("#FFCC80")  // orange (Other)
+                        android.graphics.Color.parseColor("#90CAF9"), // Food & Drink
+                        android.graphics.Color.parseColor("#A5D6A7"), // Rent
+                        android.graphics.Color.parseColor("#FFD700"), // Vacation
+                        android.graphics.Color.parseColor("#60BD68"), // Groceries
+                        android.graphics.Color.parseColor("#FFAB91"), // Transport
+                        android.graphics.Color.parseColor("#CE93D8"), // Bills
+                        android.graphics.Color.parseColor("#F17CB0")  // Other
                     )
                     valueTextSize = 14f
                     valueTextColor = android.graphics.Color.DKGRAY
                     setDrawValues(true)
                 }
-
                 val data = BarData(dataSet)
                 data.barWidth = 0.5f
                 this.data = data
 
-                // ---- Chart Styling ----
                 description.isEnabled = false
                 setDrawValueAboveBar(true)
                 setFitBars(true)
                 animateY(900)
 
+                // --- Correct X-axis configuration ---
                 xAxis.apply {
-                    valueFormatter = IndexAxisValueFormatter(displaySpending.map { it.first })
+                    valueFormatter = IndexAxisValueFormatter(fixedCategories + "Other")
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
                     setDrawAxisLine(true)
@@ -273,13 +187,11 @@ fun SpendingScreen(
                     textSize = 14f
                     labelRotationAngle = -22f
                 }
-
                 axisLeft.apply {
                     axisMinimum = 0f
                     textSize = 13f
                     setDrawGridLines(true)
                 }
-
                 axisRight.isEnabled = false
                 legend.isEnabled = false
             }
@@ -288,6 +200,5 @@ fun SpendingScreen(
             .fillMaxWidth()
             .height(250.dp)
     )
-
 
 }
