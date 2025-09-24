@@ -18,6 +18,8 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import java.time.LocalDate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.example.aibudgetapp.ui.screens.transaction.Period
+
 
 
 @Composable
@@ -31,11 +33,19 @@ fun SpendingScreen(
     val periods = listOf("Monthly", "Weekly")
     var selectedPeriod by remember { mutableStateOf(periods[0]) }
 
-    // Simple Segmented Toggle UI
+
+
+
     Row(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
         periods.forEach { period ->
             Button(
-                onClick = { selectedPeriod = period },
+                onClick = {
+                    selectedPeriod = period
+                    addTransactionViewModel.setPeriod(
+                        if (period == "Weekly") Period.WEEK else Period.MONTH
+                    )
+                   // addTransactionViewModel.fetchTransactions() // Fetch transactions after period change
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedPeriod == period) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.surface
@@ -44,6 +54,7 @@ fun SpendingScreen(
             ) { Text(period) }
         }
     }
+
 
 
     val today = java.time.LocalDate.now()

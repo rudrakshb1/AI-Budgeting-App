@@ -63,11 +63,14 @@ class AddTransactionViewModel(
     private val _spendingByCategory = MutableStateFlow<Map<String, Double>>(emptyMap())
     val spendingByCategory: StateFlow<Map<String, Double>> = _spendingByCategory
 
+    init {
+        fetchTransactions()   // automatically load when ViewModel is created
+    }
+
     // Call this whenever transaction list changes
     fun updateSpendingByCategory() {
         _spendingByCategory.value = getSpendingByCategory()
     }
-    // --- END NEW CODE ---
 
     fun getSpendingByCategoryFlow(): Flow<Map<String, Double>> {
         return flowOf(

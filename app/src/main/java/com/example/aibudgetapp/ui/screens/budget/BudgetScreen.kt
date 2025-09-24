@@ -53,14 +53,14 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                     text = { Text("Overview") }
                 )
                 Tab(
-                    selected = selectedTab == BudgetTab.TRANSACTIONS,
-                    onClick = { selectedTab = BudgetTab.TRANSACTIONS },
-                    text = { Text("Transactions") }
-                )
-                Tab(
                     selected = selectedTab == BudgetTab.SPENDING,
                     onClick = { selectedTab = BudgetTab.SPENDING },
                     text = { Text("Spending") }
+                )
+                Tab(
+                    selected = selectedTab == BudgetTab.TRANSACTIONS,
+                    onClick = { selectedTab = BudgetTab.TRANSACTIONS },
+                    text = { Text("Transactions") }
                 )
             }
         },
