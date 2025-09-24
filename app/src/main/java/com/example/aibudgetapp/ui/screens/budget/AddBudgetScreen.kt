@@ -92,6 +92,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // --- System-calculated END date
         OutlinedTextField(
             value = endDate,
             onValueChange = {},

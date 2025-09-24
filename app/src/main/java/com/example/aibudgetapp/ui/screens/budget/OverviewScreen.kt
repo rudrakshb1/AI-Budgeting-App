@@ -14,6 +14,7 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,8 +43,9 @@ fun OverviewScreen(
     val budgets by budgetViewModel.budgetList.observeAsState(emptyList())
     var query by remember { mutableStateOf("") }
 
-
-
+    LaunchedEffect(budgetViewModel) {
+        budgetViewModel.fetchBudgets()
+    }
 
     SearchBar(
         modifier = Modifier
@@ -73,16 +75,7 @@ fun OverviewScreen(
             }}
     }
 
-    Button(
-        onClick = { budgetViewModel.fetchBudgets() },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp)
-    ) {
-        Text("read budgets")
-    }
-
-    if (budgetError) {
+    if (!loading && !budgetError && list.isEmpty()) {
         Text(
             text = "Failed to fetch budget",
             color = androidx.compose.ui.graphics.Color.Red,

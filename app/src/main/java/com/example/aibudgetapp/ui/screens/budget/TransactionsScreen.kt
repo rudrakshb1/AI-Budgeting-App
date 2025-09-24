@@ -38,7 +38,7 @@ fun TransactionsScreen(viewModel: AddTransactionViewModel) { // <-- Passed from 
         Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (transactionError) {
+        if (!transactionError && txList.isEmpty()) {
             Text(
                 text = "Failed to fetch transaction",
                 color = Color.Red,
