@@ -90,16 +90,13 @@ fun SpendingScreen(
 
 
     // --- Calculate budget + totals ---
-    val budgetAmount = if (selectedBudget.chosenType == "Weekly") {
-        selectedBudget.amount / 4
-    } else {
-        selectedBudget.amount
-    }
-
+    val budgetAmount = selectedBudget.amount.toDouble()  //  Always use what user set, no divide/multiply
 
     val totalSpent = filteredTxns.sumOf { it.amount ?: 0.0 }
     val overspent = if (totalSpent > budgetAmount) totalSpent - budgetAmount else 0.0
     val saving = if (totalSpent < budgetAmount) budgetAmount - totalSpent else 0.0
+
+
 
     // --- Pie chart slices ---
     val pieSlices = mutableListOf<Pair<String, Float>>().apply {
@@ -113,10 +110,10 @@ fun SpendingScreen(
     }
 
     val colorPalette = listOf(
-        android.graphics.Color.parseColor("#90CAF9"), // light blue (Budget)
-        android.graphics.Color.parseColor("#A5D6A7"), // soft green (Spending)
-        android.graphics.Color.parseColor("#FFF59D"), // pastel yellow (Remaining)
-        android.graphics.Color.parseColor("#FFAB91")  // peach (Overspent)
+        android.graphics.Color.parseColor("#5DA5DA"), // Soft Blue
+        android.graphics.Color.parseColor("#FAA43A"), // Warm Orange
+        android.graphics.Color.parseColor("#60BD68"), // Fresh Green
+
     )
 
 
@@ -162,17 +159,17 @@ fun SpendingScreen(
 
     // --- Show Remaining / Overspent text
     Spacer(modifier = Modifier.height(8.dp))
-    if (overspent > 0) {
-        Text("Overspent by $overspent", color = MaterialTheme.colorScheme.error)
-    } else {
-        Text("Remaining to save: $saving", color = MaterialTheme.colorScheme.primary)
+    when {
+        totalSpent == 0.0 -> Text("No spending yet", color = MaterialTheme.colorScheme.primary)
+        overspent > 0 -> Text("Overspent by $overspent", color = MaterialTheme.colorScheme.error)
+        else -> Text("Remaining to save: $saving", color = MaterialTheme.colorScheme.primary)
     }
 
     Spacer(modifier = Modifier.height(24.dp))
 
     // ---- Bar Chart: Per-category spending (ALL transactions, not filtered) ----
 
-    val allCategories = listOf("Food", "Drink", "Groceries", "Transport", "Shopping", "Bills", "Other")
+    val allCategories = listOf("Food & Drink", "Rent","Groceries", "Transport", "Shopping", "Bills", "Other")
     val maxCategoriesToShow = 6
 
 // Use ALL transactions, not filtered by budget/date
@@ -187,7 +184,7 @@ fun SpendingScreen(
     else
         topSpendingAll
 
-    /* // --- Filtering by budget/date range (use if needed for other cases) ---
+    /* // --- Filtering by budget/date range (needed for other cases) ---
     val categorySpending = allCategories.map { cat ->
         cat to filteredTxns.filter { it.category == cat }.sumOf { it.amount ?: 0.0 }
     }
@@ -200,27 +197,73 @@ fun SpendingScreen(
         topSpending
     */
 
-// ---- Bar Chart AndroidView ----
+// ---- Bar Chart: Per-category spending ----
     Spacer(modifier = Modifier.height(24.dp))
     AndroidView(
         factory = { context ->
             BarChart(context).apply {
+                //  Step 1: Fixed categories
+                val fixedCategories = listOf(
+                    "Food & Drink",
+                    "Rent",
+                    "Groceries",
+                    "Transport",
+                    "Shopping",
+                    "Bills"
+                )
+
+
+                //  Step 2: Group transactions by category
+                val transactionByCategory = addTransactionViewModel.transactions.groupBy { it.category }
+
+                //  Step 3: Sum spending for known categories
+                val categorySpending = fixedCategories.map { cat ->
+                    cat to (transactionByCategory[cat]?.sumOf { it.amount ?: 0.0 } ?: 0.0)
+                }
+
+                //  Step 4: Lump everything else into "Other"
+                val otherSpending = addTransactionViewModel.transactions
+                    .filter { it.category !in fixedCategories }
+                    .sumOf { it.amount ?: 0.0 }
+
+                //  Step 5: Build final display list
+                val allSpending = if (otherSpending > 0) {
+                    categorySpending + listOf("Other" to otherSpending)
+                } else categorySpending
+
+                //  Step 6: Remove empty & sort
+                val displaySpending = allSpending.filter { it.second > 0 }.sortedByDescending { it.second }
+
+                // ---- Chart entries ----
                 val entries = displaySpending.mapIndexed { idx, entry ->
                     BarEntry(idx.toFloat(), entry.second.toFloat())
                 }
+
                 val dataSet = BarDataSet(entries, "Categories").apply {
-                    colors = colorPalette
-                    valueTextSize = 16f
+                    colors = listOf(
+                        android.graphics.Color.parseColor("#90CAF9"), // light blue
+                        android.graphics.Color.parseColor("#A5D6A7"), // soft green
+                        android.graphics.Color.parseColor("#FFF59D"), // pastel yellow
+                        android.graphics.Color.parseColor("#FFAB91"), // peach
+                        android.graphics.Color.parseColor("#CE93D8"), // lavender
+                        android.graphics.Color.parseColor("#B0BEC5"), // grey
+                        android.graphics.Color.parseColor("#FFCC80")  // orange (Other)
+                    )
+                    valueTextSize = 14f
                     valueTextColor = android.graphics.Color.DKGRAY
                     setDrawValues(true)
                 }
+
                 val data = BarData(dataSet)
                 data.barWidth = 0.5f
                 this.data = data
+
+                // ---- Chart Styling ----
                 description.isEnabled = false
                 setDrawValueAboveBar(true)
                 setFitBars(true)
                 animateY(900)
+
                 xAxis.apply {
                     valueFormatter = IndexAxisValueFormatter(displaySpending.map { it.first })
                     position = XAxis.XAxisPosition.BOTTOM
@@ -230,11 +273,13 @@ fun SpendingScreen(
                     textSize = 14f
                     labelRotationAngle = -22f
                 }
+
                 axisLeft.apply {
                     axisMinimum = 0f
                     textSize = 13f
                     setDrawGridLines(true)
                 }
+
                 axisRight.isEnabled = false
                 legend.isEnabled = false
             }
@@ -243,5 +288,6 @@ fun SpendingScreen(
             .fillMaxWidth()
             .height(250.dp)
     )
+
 
 }
