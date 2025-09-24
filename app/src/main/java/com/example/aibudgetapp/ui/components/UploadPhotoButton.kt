@@ -111,12 +111,11 @@ fun UploadPhotoButton(
     ) { uri: Uri? ->
         uri?.let {
             val transactions = parseCsv(context, it)
-            transactions.forEach { tx ->
-                android.util.Log.d("CSV_IMPORT", "Parsed transaction: $tx")
-            }
+            addTxViewModel.importTransactions(transactions)
             Toast.makeText(context, "CSV imported (${transactions.size})", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()

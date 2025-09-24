@@ -263,6 +263,23 @@ class AddTransactionViewModel(
             imageUri = imageUri
         )
     }
+    fun importTransactions(transactions: List<Transaction>) {
+        transactions.forEach { tx ->
+            repository.addTransaction(
+                transaction = tx,
+                onSuccess = {
+                    Log.d("CSV_IMPORT", "Inserted txn: $tx")
+                    fetchTransactions()           // refresh UI after insert
+                    updateSpendingByCategory()    // keep charts in sync
+                },
+                onFailure = { e ->
+                    Log.e("CSV_IMPORT", "Failed insert: ${e.message}")
+                    transactionError = true
+                }
+            )
+        }
+    }
+
 
     fun deleteTransaction(id: String) {
         repository.deleteTransaction(
