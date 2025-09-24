@@ -5,13 +5,16 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.aibudgetapp.ui.screens.budget.Budget
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
+import com.example.aibudgetapp.ui.screens.transaction.Transaction
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.time.temporal.TemporalAmount
 import java.util.Locale
 
 private const val WEEKS_PER_MONTH = 52.0 / 12.0
@@ -25,6 +28,9 @@ class HomeViewModel(
         private set
 
     var monthlyBudget by mutableStateOf(0)
+        private set
+
+    var monthlyBudgetList = mutableStateListOf<Int>()
         private set
 
     var transactionError by mutableStateOf(false)
@@ -42,6 +48,9 @@ class HomeViewModel(
     var weeklyBudget by mutableStateOf(0)
         private set
 
+    var weeklyBudgetList = mutableStateListOf<Int>()
+        private set
+
     var weeklySpent by mutableStateOf(0.0)
         private set
 
@@ -50,6 +59,21 @@ class HomeViewModel(
 
     var weekLabels = mutableStateListOf<String>()
         private set
+
+    var bugets: List<Budget> by mutableStateOf(emptyList())
+        private set
+
+    fun getBudgets() {
+        budgetError = false
+        budgetRepository.getBudgets(
+            onSuccess = { list ->
+                bugets = list
+            },
+            onFailure = { e ->
+                budgetError = true
+            }
+        )
+    }
 
     fun getMonthlyBudget() {
 
@@ -123,6 +147,38 @@ class HomeViewModel(
         )
     }
 
+    fun getWeeklyBudgetList() {
+        getBudgets()
+        bugets.filter { it.chosenType.equals("weekly", ignoreCase = true) }
+
+        val parseFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+        for (i in 0 until 12) {
+            val anchor = LocalDate.now().minusWeeks(i.toLong())
+            val weekStart = anchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            val weekEnd = weekStart.plusDays(6)
+            var sum = 0
+            bugets.forEach { budget ->
+                val budgetStartDate = LocalDate.parse(budget.startDate, parseFmt)
+                val budgetEndDate = LocalDate.parse(budget.endDate, parseFmt)
+
+                if (budgetStartDate.isBefore(weekStart) && budgetEndDate.isAfter(weekEnd)) {
+                    sum += budget.amount
+                }
+                else if (budgetStartDate.isBefore(weekStart) && !budgetEndDate.isAfter(weekEnd)) {
+                    val days = budgetEndDate.toEpochDay() - weekStart.toEpochDay()
+                    sum += budget.amount / 7 * (days.toInt() + 1)
+                }
+                else if (!budgetStartDate.isBefore(weekStart) && budgetEndDate.isAfter(weekEnd)) {
+                    val days = weekEnd.toEpochDay() - budgetStartDate.toEpochDay()
+                    sum += budget.amount / 7 * (days.toInt() + 1)
+                }
+            }
+
+            weeklyBudgetList.add(0, sum)
+        }
+    }
+
     fun getWeeklyTransaction() {
         val today = LocalDate.now()
         val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -143,9 +199,6 @@ class HomeViewModel(
                         }
                     }
                     .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
-
-
-
             },
             onFailure = { e ->
                 transactionError = true

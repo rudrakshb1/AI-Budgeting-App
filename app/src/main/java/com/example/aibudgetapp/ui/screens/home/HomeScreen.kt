@@ -29,6 +29,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         homeViewModel.getMonthlyBudget()
         homeViewModel.getWeeklyBudget()
+        homeViewModel.getWeeklyBudgetList()
         homeViewModel.getMonthlyTransaction(YearMonth.now())
         homeViewModel.get12MonthlyTransaction()
         homeViewModel.getWeeklyTransaction()
@@ -41,6 +42,7 @@ fun HomeScreen(
     val monthLabels = homeViewModel.monthLabels
 
     val weeklyBudget = homeViewModel.weeklyBudget
+    val weeklyBugetList = homeViewModel.weeklyBudgetList
     val weeklySpent = homeViewModel.weeklySpent
     val weekly12Spent = homeViewModel.weeklyListTransaction
     val weekLabels = homeViewModel.weekLabels
@@ -88,11 +90,24 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                 }
                 item {
+                    val testCompareValues = List<Int>(12) {
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                        monthlyBudget
+                    }
                     LineChart(
                         values = monthly12Spent,
+                        compareValues = testCompareValues,
                         xLabels = monthLabels,
-                        limitY = monthlyBudget,
-                        title = "Monthly Spendings"
+                        title = "Monthly Spendings",
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -117,8 +132,8 @@ fun HomeScreen(
                 item {
                     LineChart(
                         values = weekly12Spent,
+                        compareValues = weeklyBugetList,
                         xLabels = weekLabels,
-                        limitY = weeklyBudget,
                         title = "Weekly Spendings"
                     )
                     Spacer(Modifier.height(48.dp))

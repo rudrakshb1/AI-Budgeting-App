@@ -20,6 +20,7 @@ fun BudgetScreen(
 
     // form states
     var name by remember { mutableStateOf("") }
+    var recursive by remember { mutableStateOf(0) }
     var amount by remember { mutableStateOf(0) }
     val type = listOf("Weekly", "Monthly")
     var chosenType by remember { mutableStateOf(type[0]) }
@@ -32,11 +33,16 @@ fun BudgetScreen(
     // --- Auto Start & End Date ---
     val today = LocalDate.now()
     val startDate = today.toString()
-    val endDate = if (chosenType == "Weekly") {
-        today.plusDays(6).toString()
-    } else {
-        today.plusDays(29).toString()
-    }
+    val endDate =
+        if (recursive != 0) {
+            if (chosenType == "Weekly") {
+                today.plusDays((7 * recursive).toLong()).plusDays(-1).toString()
+            } else {
+                today.plusMonths(recursive.toLong()).plusDays(-1).toString()
+            }
+        } else {
+            today.toString()
+        }
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -77,6 +83,14 @@ fun BudgetScreen(
             onValueChange = {},
             label = { Text("Start Date (auto)") },
             readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = recursive.toString(),
+            onValueChange = { recursive = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
+            label = { Text("Recursive") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
