@@ -75,6 +75,13 @@ fun OverviewScreen(
             }}
     }
 
+    if (budgetError) {
+        Text(
+            text = "Failed to fetch budget",
+            color = androidx.compose.ui.graphics.Color.Red,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
     if (!loading && !budgetError && list.isEmpty()) {
         Text(
             text = "Failed to fetch budget",
