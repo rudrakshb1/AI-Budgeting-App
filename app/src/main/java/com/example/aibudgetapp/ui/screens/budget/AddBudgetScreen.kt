@@ -33,16 +33,22 @@ fun BudgetScreen(
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
     // --- Auto Start & End Date ---
-    val endDate =
-        if (recursive != 0) {
-            if (chosenType == "Weekly") {
-                LocalDate.parse(startDate).plusDays((7 * recursive).toLong()).plusDays(-1).toString()
-            } else {
-                LocalDate.parse(startDate).plusMonths(recursive.toLong()).plusDays(-1).toString()
-            }
+    val endDate = if (recursive != 0) {
+        val start = LocalDate.parse(startDate)
+        if (chosenType.equals("Weekly", ignoreCase = true)) {
+            start.plusDays((7L * recursive) - 1).toString()
         } else {
-            startDate
+            val endRaw = start.plusMonths(recursive.toLong())
+            if (endRaw.dayOfMonth == start.dayOfMonth) {
+                endRaw.minusDays(1).toString()
+            } else {
+                endRaw.toString()
+            }
         }
+    } else {
+        startDate
+    }
+
 
     Column(
         verticalArrangement = Arrangement.Top,
