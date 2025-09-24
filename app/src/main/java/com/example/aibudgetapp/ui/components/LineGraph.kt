@@ -20,7 +20,6 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.IFillFormatter
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.util.Log
 
 @Composable
 fun LineChart(
@@ -84,17 +83,11 @@ fun LineChart(
                     chart.clear(); chart.invalidate(); return@AndroidView
                 }
 
-                val n = listOfNotNull(
-                    values.size,
-                    xLabels.takeIf { it.isNotEmpty() }?.size,
-                    compareValues?.size
-                ).minOrNull() ?: values.size
+                val nMain = minOf(values.size, if (xLabels.isNotEmpty()) xLabels.size else values.size)
+                val mainVals = values.take(nMain)
+                val labels   = xLabels.take(nMain).ifEmpty { (0 until nMain).map { it.toString() } }
+                val cmpVals  = compareValues?.take(nMain)?.map { it.toFloat() }
 
-                val mainVals = values.take(n)
-                val labels = xLabels.take(n).ifEmpty { (0 until n).map { it.toString() } }
-                val cmpVals = compareValues?.take(n)
-
-                // Main dataset
                 val mainEntries = mainVals.mapIndexed { i, v -> Entry(i.toFloat(), v.toFloat()) }
                 val mainSet = LineDataSet(mainEntries, if (showLegend) label else "").apply {
                     color = trackLineColor
@@ -107,36 +100,19 @@ fun LineChart(
                     fillDrawable = verticalFadeDrawable(trackLineColor)
                     fillFormatter = IFillFormatter { _, _ -> 0f }
                 }
-
                 val data = LineData(mainSet)
 
-                // Compare dataset
-                if (cmpVals != null && cmpVals.isNotEmpty()) {
-                    val cmpEntries = cmpVals.mapIndexed { i, v -> Entry(i.toFloat(), v.toFloat()) }
-                    val cmpSet = LineDataSet(cmpEntries, if (showLegend) compareLabel else "").apply {
-                        color = compareLineColor
-                        lineWidth = 2f
-                        setDrawCircles(false)
-                        setDrawValues(false)
-                        mode = LineDataSet.Mode.LINEAR
-                        setDrawFilled(false)
-                        fillDrawable = verticalFadeDrawable(trackLineColor)
-                        fillFormatter = IFillFormatter { _, _ -> 0f }
-                    }
-                    data.addDataSet(cmpSet)
-                }
-
                 if (showLastDot && mainVals.isNotEmpty()) {
-                    val lastIdx = n - 1
+                    val lastIdx = nMain - 1
                     val lastVal = mainVals[lastIdx].toFloat()
                     val lastSet = LineDataSet(listOf(Entry(lastIdx.toFloat(), lastVal)), "").apply {
-                        color = Color.TRANSPARENT
+                        color = android.graphics.Color.TRANSPARENT
                         lineWidth = 0f
                         setDrawValues(false)
                         setDrawCircles(true)
                         setCircleColor(trackLineColor)
                         circleRadius = 5f
-                        setCircleHoleColor(Color.WHITE)
+                        setCircleHoleColor(android.graphics.Color.WHITE)
                         circleHoleRadius = 2.5f
                         isHighlightEnabled = false
                         setDrawFilled(false)
@@ -144,17 +120,33 @@ fun LineChart(
                     data.addDataSet(lastSet)
                 }
 
-                chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+                if (!cmpVals.isNullOrEmpty()) {
+                    val cmpEntries = cmpVals.mapIndexed { i, v -> Entry(i.toFloat(), v) }
+                    val cmpSet = LineDataSet(cmpEntries, if (showLegend) compareLabel else "").apply {
+                        color = compareLineColor
+                        mode = LineDataSet.Mode.LINEAR
+                        setDrawFilled(false)
+                        setDrawValues(false)
+                        setDrawCircles(false)
+                        if (dashedCompare) {
+                            enableDashedLine(28f, 14f, 0f)
+                            lineWidth = 2f
+                        } else {
+                            lineWidth = 2f
+                        }
+                    }
+                    data.addDataSet(cmpSet)
+                }
 
+                chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
                 val maxMain = (mainVals.maxOrNull() ?: 0.0).toFloat()
-                val maxCmp = (cmpVals?.maxOrNull() ?: 0.0).toFloat()
+                val maxCmp  = (cmpVals?.maxOrNull() ?: 0f)
                 val top = maxOf(maxMain, maxCmp)
                 chart.axisLeft.apply {
                     axisMinimum = 0f
                     axisMaximum = if (top == 0f) 1f else top * 1.1f
                     removeAllLimitLines()
                 }
-
                 chart.data = data
                 chart.notifyDataSetChanged()
                 chart.invalidate()
@@ -164,7 +156,7 @@ fun LineChart(
 }
 
 private fun verticalFadeDrawable(baseColor: Int): GradientDrawable {
-    val top = Color.argb(60, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
+    val top = Color.argb(120, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
     val bottom = Color.argb(0, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
     return GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(top, bottom))
 }

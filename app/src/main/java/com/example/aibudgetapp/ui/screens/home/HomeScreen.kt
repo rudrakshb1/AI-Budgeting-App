@@ -1,6 +1,5 @@
 package com.example.aibudgetapp.ui.screens.home
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -18,7 +17,6 @@ import com.example.aibudgetapp.ui.screens.screenContainer.Screen
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.theme.*
-import java.time.YearMonth
 
 @Composable
 fun HomeScreen(
@@ -116,7 +114,6 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                 }
                 item {
-                    weeklyBudgetList.forEach { Log.d("BudgetEntry", "value=${it}") }
                     LineChart(
                         values = weekly12Spent,
                         compareValues = weeklyBudgetList,

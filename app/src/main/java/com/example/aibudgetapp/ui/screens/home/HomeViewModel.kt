@@ -91,12 +91,16 @@ class HomeViewModel(
         )
     }
 
-    private fun overlapDaysInclusive(s1: LocalDate, e1: LocalDate, s2: LocalDate, e2: LocalDate): Int {
-        if (e1.isBefore(s2) || e2.isBefore(s1)) return 0
-        val start = if (s1.isAfter(s2)) s1 else s2
-        val end   = if (e1.isBefore(e2)) e1 else e2
-        return (ChronoUnit.DAYS.between(start, end) + 1).toInt().coerceAtLeast(0)
+    private fun overlapDaysInclusive(
+        s1: LocalDate, e1: LocalDate,
+        s2: LocalDate, e2: LocalDate
+    ): Int {
+        val start = maxOf(s1, s2)
+        val end   = minOf(e1, e2)
+        if (end.isBefore(start)) return 0
+        return (ChronoUnit.DAYS.between(start, end) + 1).toInt()
     }
+
 
     fun get12MonthlyTransaction() {
         transactionError = false
@@ -129,29 +133,29 @@ class HomeViewModel(
 
         budgetRepository.getBudgets(
             onSuccess = { list ->
-                val budgets = list.filter { it.chosenType.equals("weekly", ignoreCase = true) }
+                val weeklyBudgets  = list.filter { it.chosenType.equals("weekly",  ignoreCase = true) }
+                val monthlyBudgets = list.filter { it.chosenType.equals("monthly", ignoreCase = true) }
 
                 for (i in 0 until 12) {
                     val anchor = LocalDate.now().minusWeeks(i.toLong())
                     val weekStart = anchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                    val weekEnd = weekStart.plusDays(6)
+                    val weekEnd   = weekStart.plusDays(6)
 
                     var sum = 0.0
 
-                    budgets.forEach { budget ->
-                        val start = LocalDate.parse(budget.startDate, parseFmt)
-                        val end   = LocalDate.parse(budget.endDate, parseFmt)
-
-                        if (end.isBefore(weekStart) || start.isAfter(weekEnd)) return@forEach
-
-                        val overlapStart = if (start.isAfter(weekStart)) start else weekStart
-                        val overlapEnd   = if (end.isBefore(weekEnd)) end else weekEnd
-
-                        val overlapDays = overlapDaysInclusive(overlapStart, overlapEnd, start, end)
-
+                    weeklyBudgets.forEach { b ->
+                        val s = LocalDate.parse(b.startDate, parseFmt)
+                        val e = LocalDate.parse(b.endDate,   parseFmt)
+                        val overlapDays = overlapDaysInclusive(weekStart, weekEnd, s, e)
                         if (overlapDays > 0) {
-                            sum += budget.amount * overlapDays / 7.0
+                            sum += b.amount.toDouble() * overlapDays / 7.0
                         }
+                    }
+
+                    monthlyBudgets.forEach { b ->
+                        val s = LocalDate.parse(b.startDate, parseFmt)
+                        val e = LocalDate.parse(b.endDate,   parseFmt)
+                        sum += monthlyPortionForWeek(b.amount, s, e, weekStart, weekEnd)
                     }
 
                     weeklyBudgetList.add(0, sum.toInt())
@@ -161,6 +165,27 @@ class HomeViewModel(
                 budgetError = true
             }
         )
+    }
+
+    private fun monthlyPortionForWeek(
+        amount: Int,
+        budgetStart: LocalDate,
+        budgetEnd: LocalDate,
+        weekStart: LocalDate,
+        weekEnd: LocalDate
+    ): Double {
+        val start = maxOf(budgetStart, weekStart)
+        val end   = minOf(budgetEnd, weekEnd)
+        if (end.isBefore(start)) return 0.0
+
+        var d = start
+        var acc = 0.0
+        while (!d.isAfter(end)) {
+            val dim = YearMonth.from(d).lengthOfMonth()
+            acc += amount.toDouble() / dim
+            d = d.plusDays(1)
+        }
+        return acc
     }
 
     fun get12WeeklyTransaction() {
