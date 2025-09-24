@@ -49,7 +49,6 @@ fun BudgetScreen(
         startDate
     }
 
-
     Column(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -80,6 +79,7 @@ fun BudgetScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
+
         // --- Editable START date
         OutlinedTextField(
             value = startDate,
@@ -89,7 +89,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- System-calculated END date
+        // --- Editable Recursive
         OutlinedTextField(
             value = recursive.toString(),
             onValueChange = { recursive = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
