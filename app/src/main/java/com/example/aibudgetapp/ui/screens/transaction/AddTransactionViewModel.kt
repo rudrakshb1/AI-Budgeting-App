@@ -63,11 +63,14 @@ class AddTransactionViewModel(
     private val _spendingByCategory = MutableStateFlow<Map<String, Double>>(emptyMap())
     val spendingByCategory: StateFlow<Map<String, Double>> = _spendingByCategory
 
+    init {
+        fetchTransactions()   // automatically load when ViewModel is created
+    }
+
     // Call this whenever transaction list changes
     fun updateSpendingByCategory() {
         _spendingByCategory.value = getSpendingByCategory()
     }
-    // --- END NEW CODE ---
 
     fun getSpendingByCategoryFlow(): Flow<Map<String, Double>> {
         return flowOf(
@@ -260,6 +263,23 @@ class AddTransactionViewModel(
             imageUri = imageUri
         )
     }
+    fun importTransactions(transactions: List<Transaction>) {
+        transactions.forEach { tx ->
+            repository.addTransaction(
+                transaction = tx,
+                onSuccess = {
+                    Log.d("CSV_IMPORT", "Inserted txn: $tx")
+                    fetchTransactions()           // refresh UI after insert
+                    updateSpendingByCategory()    // keep charts in sync
+                },
+                onFailure = { e ->
+                    Log.e("CSV_IMPORT", "Failed insert: ${e.message}")
+                    transactionError = true
+                }
+            )
+        }
+    }
+
 
     fun deleteTransaction(id: String) {
         repository.deleteTransaction(
@@ -273,7 +293,7 @@ class AddTransactionViewModel(
     }
 }
 
-// Factory stays the same
+
 class AddTransactionViewModelFactory(
     private val repository: TransactionRepository
 ) : ViewModelProvider.Factory {

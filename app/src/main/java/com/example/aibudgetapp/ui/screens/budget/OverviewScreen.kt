@@ -74,10 +74,10 @@ fun OverviewScreen(
     }
 
     Button(
-    onClick = { budgetViewModel.fetchBudgets() },
-    modifier = Modifier
-    .fillMaxWidth()
-    .padding(top = 16.dp)
+        onClick = { budgetViewModel.fetchBudgets() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
     ) {
         Text("read budgets")
     }

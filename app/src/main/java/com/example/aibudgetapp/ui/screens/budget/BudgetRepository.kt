@@ -26,6 +26,8 @@ class BudgetRepository {
             "chosencategory" to budget.chosenCategory,
             "amount" to budget.amount,
             "checked" to budget.checked,
+            "startDate" to (budget.startDate ?: ""),
+            "endDate" to (budget.endDate ?: "")
         )
         userBudgetsRef()
             .add(map)
@@ -54,9 +56,13 @@ class BudgetRepository {
                             chosenType = data["chosentype"] as? String ?: "",
                             chosenCategory = data["chosencategory"] as? String ?: "",
                             amount = (data["amount"] as? Number)?.toInt() ?: 0,
-                            checked = data["checked"] as? Boolean ?: false
+                            checked = data["checked"] as? Boolean ?: false,
+                            startDate = data["startDate"] as? String,
+                            endDate = data["endDate"] as? String
                         )
                     }
+                    Log.d("REPO", "getBudgets: found ${list.size} budgets")
+
                     onSuccess(list)
                 }
                 .addOnFailureListener(onFailure)
@@ -82,7 +88,7 @@ class BudgetRepository {
     }
     fun getbudgetcategory(
         category: String,
-        onSuccess: (List<Budget>) -> Unit,
+    onSuccess: (List<Budget>) -> Unit,
         onFailure: (Exception) -> Unit
     ){
         try {
@@ -99,9 +105,14 @@ class BudgetRepository {
                         chosenType = cate["chosentype"] as? String ?: "",
                         chosenCategory = cate["chosencategory"] as? String ?: "",
                         amount = (cate["amount"] as? Number)?.toInt() ?: 0,
-                        checked = cate["checked"] as? Boolean ?: false
+                        checked = cate["checked"] as? Boolean ?: false,
+                        startDate = cate["startDate"] as? String,
+                        endDate = cate["endDate"] as? String
                     )
                 }
+                Log.d("REPO", "getBudgets: found ${results.size} budgets")
+
+
                 onSuccess(results)
             }
             .addOnFailureListener(onFailure)
