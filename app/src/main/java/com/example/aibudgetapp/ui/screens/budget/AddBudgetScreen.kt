@@ -28,14 +28,14 @@ fun BudgetScreen(
     var isTypeExpanded by remember { mutableStateOf(false) }
     var isCategoryExpanded by remember { mutableStateOf(false) }
     var checked by remember { mutableStateOf(true) }
+    var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
-    // --- Auto Start & End Date ---
-    val today = LocalDate.now()
-    val startDate = today.toString()
+    // --- Auto-calculate end date whenever start/type changes ---
+    val parsedStart = runCatching { LocalDate.parse(startDate) }.getOrElse { LocalDate.now() }
     val endDate = if (chosenType == "Weekly") {
-        today.plusDays(6).toString()
+        parsedStart.plusDays(6).toString()
     } else {
-        today.plusDays(29).toString()
+        parsedStart.plusDays(29).toString()
     }
 
     Column(
@@ -70,17 +70,16 @@ fun BudgetScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
-
-        // Show Start/End date (auto)
+        // --- Editable START date
         OutlinedTextField(
             value = startDate,
-            onValueChange = {},
-            label = { Text("Start Date (auto)") },
-            readOnly = true,
+            onValueChange = { startDate = it },
+            label = { Text("Start Date") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // --- System-calculated END date
         OutlinedTextField(
             value = endDate,
             onValueChange = {},
@@ -88,7 +87,12 @@ fun BudgetScreen(
             readOnly = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(modifier = Modifier.height(20.dp))
+
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(12.dp))
+
 
         // Budget Type Dropdown
         ExposedDropdownMenuBox(
