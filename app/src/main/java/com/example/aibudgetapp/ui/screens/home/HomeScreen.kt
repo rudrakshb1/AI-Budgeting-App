@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.ui.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -27,23 +28,21 @@ fun HomeScreen(
     val homeViewModel = remember { HomeViewModel(BudgetRepository(), TransactionRepository()) }
 
     LaunchedEffect(Unit) {
-        homeViewModel.getMonthlyBudget()
-        homeViewModel.getWeeklyBudget()
+        homeViewModel.getMonthlyBudgetList()
         homeViewModel.getWeeklyBudgetList()
-        homeViewModel.getMonthlyTransaction(YearMonth.now())
         homeViewModel.get12MonthlyTransaction()
-        homeViewModel.getWeeklyTransaction()
         homeViewModel.get12WeeklyTransaction()
     }
 
-    val monthlyBudget = homeViewModel.monthlyBudget
-    val monthlySpent = homeViewModel.monthlySpent
+    val monthlyBudget = homeViewModel.monthlyBudgetList.lastOrNull() ?: 0
+    val monthlyBudgetList = homeViewModel.monthlyBudgetList
+    val monthlySpent = homeViewModel.monthlyListTransaction.lastOrNull() ?: 0.0
     val monthly12Spent = homeViewModel.monthlyListTransaction
     val monthLabels = homeViewModel.monthLabels
 
-    val weeklyBudget = homeViewModel.weeklyBudget
-    val weeklyBugetList = homeViewModel.weeklyBudgetList
-    val weeklySpent = homeViewModel.weeklySpent
+    val weeklyBudget = homeViewModel.weeklyBudgetList.lastOrNull() ?: 0
+    val weeklyBudgetList = homeViewModel.weeklyBudgetList
+    val weeklySpent = homeViewModel.weeklyListTransaction.lastOrNull() ?: 0.0
     val weekly12Spent = homeViewModel.weeklyListTransaction
     val weekLabels = homeViewModel.weekLabels
 
@@ -90,22 +89,9 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                 }
                 item {
-                    val testCompareValues = List<Int>(12) {
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                        monthlyBudget
-                    }
                     LineChart(
                         values = monthly12Spent,
-                        compareValues = testCompareValues,
+                        compareValues = monthlyBudgetList,
                         xLabels = monthLabels,
                         title = "Monthly Spendings",
                     )
@@ -130,9 +116,10 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                 }
                 item {
+                    weeklyBudgetList.forEach { Log.d("BudgetEntry", "value=${it}") }
                     LineChart(
                         values = weekly12Spent,
-                        compareValues = weeklyBugetList,
+                        compareValues = weeklyBudgetList,
                         xLabels = weekLabels,
                         title = "Weekly Spendings"
                     )

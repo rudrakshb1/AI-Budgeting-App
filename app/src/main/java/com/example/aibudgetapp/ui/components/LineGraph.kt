@@ -20,6 +20,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.IFillFormatter
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 
 @Composable
 fun LineChart(
@@ -119,6 +120,8 @@ fun LineChart(
                         setDrawValues(false)
                         mode = LineDataSet.Mode.LINEAR
                         setDrawFilled(false)
+                        fillDrawable = verticalFadeDrawable(trackLineColor)
+                        fillFormatter = IFillFormatter { _, _ -> 0f }
                     }
                     data.addDataSet(cmpSet)
                 }
