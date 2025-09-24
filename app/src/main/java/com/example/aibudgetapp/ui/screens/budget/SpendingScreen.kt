@@ -19,6 +19,8 @@ import java.time.LocalDate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.example.aibudgetapp.ui.screens.transaction.Period
+import com.github.mikephil.charting.formatter.ValueFormatter
+
 
 
 
@@ -30,30 +32,30 @@ fun SpendingScreen(
     val spending = addTransactionViewModel.spendingByCategory.collectAsState(initial = emptyMap())
 
     // ===== NEW: Period Toggle =====
-    val periods = listOf("Monthly", "Weekly")
-    var selectedPeriod by remember { mutableStateOf(periods[0]) }
+  //  val periods = listOf("Monthly", "Weekly")
+  //  var selectedPeriod by remember { mutableStateOf(periods[0]) }
 
 
 
 
-    Row(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
-        periods.forEach { period ->
-            Button(
-                onClick = {
-                    selectedPeriod = period
-                    addTransactionViewModel.setPeriod(
-                        if (period == "Weekly") Period.WEEK else Period.MONTH
-                    )
-                   // addTransactionViewModel.fetchTransactions() // Fetch transactions after period change
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedPeriod == period) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier.padding(end = 8.dp)
-            ) { Text(period) }
-        }
-    }
+   // Row(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+    //    periods.forEach { period ->
+   //         Button(
+    //            onClick = {
+    //                selectedPeriod = period
+     //               addTransactionViewModel.setPeriod(
+     //                   if (period == "Weekly") Period.WEEK else Period.MONTH
+      //              )
+     //              // addTransactionViewModel.fetchTransactions() // Fetch transactions after period change
+      //          },
+       //         colors = ButtonDefaults.buttonColors(
+        //            containerColor = if (selectedPeriod == period) MaterialTheme.colorScheme.primary
+         //           else MaterialTheme.colorScheme.surface
+         //       ),
+         //       modifier = Modifier.padding(end = 8.dp)
+         //   ) { Text(period) }
+       // }
+   // }
 
 
 
@@ -69,7 +71,7 @@ fun SpendingScreen(
     }
 
     // ===== Filtered Transactions by Period =====
-    val filteredTxns = when (selectedPeriod) {
+    val filteredTxns = when (selectedBudget.chosenType) {
         "Monthly" -> addTransactionViewModel.transactions.filter { tx ->
             val txDate = safeParse(tx.date)
             val start = safeParse(selectedBudget.startDate)
@@ -82,23 +84,22 @@ fun SpendingScreen(
             val end = safeParse(selectedBudget.endDate)
             txDate != null && start != null && end != null && (txDate >= start && txDate <= end)
         }
-
         else -> addTransactionViewModel.transactions
     }
 
 
-    // --- Calculate budget for the selected period ---
-    val budgetAmount = if (selectedPeriod == "Weekly") {
-        // Calculate 1 week's worth of the monthly budget (simple version, divide by 4)
+
+    // --- Calculate budget + totals ---
+    val budgetAmount = if (selectedBudget.chosenType == "Weekly") {
         selectedBudget.amount / 4
     } else {
-        // Use full monthly budget
         selectedBudget.amount
     }
+
+
     val totalSpent = filteredTxns.sumOf { it.amount ?: 0.0 }
     val overspent = if (totalSpent > budgetAmount) totalSpent - budgetAmount else 0.0
     val saving = if (totalSpent < budgetAmount) budgetAmount - totalSpent else 0.0
-
 
     // --- Pie chart slices ---
     val pieSlices = mutableListOf<Pair<String, Float>>().apply {
@@ -107,55 +108,50 @@ fun SpendingScreen(
         if (overspent > 0) {
             add("Overspent" to overspent.toFloat())
         } else {
-            add("Saving" to saving.toFloat())
+            add("Remaining" to saving.toFloat())
         }
     }
 
     val colorPalette = listOf(
-        MaterialTheme.colorScheme.primary.toArgb(),
-        MaterialTheme.colorScheme.secondary.toArgb(),
-        MaterialTheme.colorScheme.tertiary.toArgb(),
-        MaterialTheme.colorScheme.error.toArgb() // red for overspent
+        android.graphics.Color.parseColor("#90CAF9"), // light blue (Budget)
+        android.graphics.Color.parseColor("#A5D6A7"), // soft green (Spending)
+        android.graphics.Color.parseColor("#FFF59D"), // pastel yellow (Remaining)
+        android.graphics.Color.parseColor("#FFAB91")  // peach (Overspent)
     )
+
 
     Spacer(modifier = Modifier.height(32.dp))
     Text("Budget vs Spending", style = MaterialTheme.typography.titleMedium)
 
-    // ---- Pie Chart (visual enhanced) ----
+    // ---- Pie Chart ----
     AndroidView(
         factory = { context ->
             PieChart(context).apply {
                 val entries = pieSlices.map { (label, value) -> PieEntry(value, label) }
                 val dataSet = PieDataSet(entries, "").apply {
                     colors = colorPalette
-                    valueTextSize = 16f
-                    sliceSpace = 10f                // Visual space
-                    selectionShift = 14f           // Slice pops on tap
-                    yValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
-                    xValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
-                    valueLinePart1Length = 0.5f
-                    valueLinePart2Length = 0.6f
+                    valueTextSize = 14f
                 }
                 this.data = PieData(dataSet).apply {
                     setValueTextColor(android.graphics.Color.DKGRAY)
-                    setValueTextSize(16f)
+                    setValueTextSize(14f)
+                    setValueFormatter(object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            return "$${String.format("%.0f", value)}"
+                        }
+                    })
                 }
-                setUsePercentValues(true)
-                setEntryLabelColor(android.graphics.Color.DKGRAY)
-                setEntryLabelTextSize(14f)
+                setUsePercentValues(false) // show actual numbers
                 holeRadius = 65f
                 transparentCircleRadius = 69f
                 setCenterText("Budget\nSummary")
                 setCenterTextSize(18f)
-                setDrawEntryLabels(true)
-                setExtraOffsets(18f, 0f, 18f, 24f)
                 description.isEnabled = false
                 legend.isEnabled = true
                 legend.textSize = 14f
                 legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
                 legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
                 legend.orientation = Legend.LegendOrientation.HORIZONTAL
-                legend.xEntrySpace = 20f
                 animateY(900)
             }
         },
@@ -164,18 +160,12 @@ fun SpendingScreen(
             .height(250.dp)
     )
 
-    // Show remaining/overspent text
+    // --- Show Remaining / Overspent text
     Spacer(modifier = Modifier.height(8.dp))
     if (overspent > 0) {
-        Text(
-            text = "Overspent by $overspent",
-            color = MaterialTheme.colorScheme.error
-        )
+        Text("Overspent by $overspent", color = MaterialTheme.colorScheme.error)
     } else {
-        Text(
-            text = "Remaining to save: $saving",
-            color = MaterialTheme.colorScheme.primary
-        )
+        Text("Remaining to save: $saving", color = MaterialTheme.colorScheme.primary)
     }
 
     Spacer(modifier = Modifier.height(24.dp))
