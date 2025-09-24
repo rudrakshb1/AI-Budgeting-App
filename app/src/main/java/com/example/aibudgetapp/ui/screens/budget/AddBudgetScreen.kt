@@ -1,62 +1,42 @@
 package com.example.aibudgetapp.ui.screens.budget
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.graphics.Color
-
+import androidx.compose.ui.unit.dp
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
-    onBackClick: () -> Unit = {},  //added parameter for back
-
+    onBackClick: () -> Unit = {},
 ) {
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
     val budgetSuccess by remember { derivedStateOf { budgetViewModel.budgetSuccess } }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
 
-
-    val date = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
-    // var selectedDate by remember { mutableStateOf(date[0]) }
+    // form states
+    var name by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf(0) }
     val type = listOf("Weekly", "Monthly")
     var chosenType by remember { mutableStateOf(type[0]) }
     val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
     var chosenCategory by remember { mutableStateOf(categories[0]) }
-    var name by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf(0) }
-    var isDateExpanded by remember { mutableStateOf(false) }
     var isTypeExpanded by remember { mutableStateOf(false) }
     var isCategoryExpanded by remember { mutableStateOf(false) }
     var checked by remember { mutableStateOf(true) }
+    var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
+
+    // --- Auto-calculate end date whenever start/type changes ---
+    val parsedStart = runCatching { LocalDate.parse(startDate) }.getOrElse { LocalDate.now() }
+    val endDate = if (chosenType == "Weekly") {
+        parsedStart.plusDays(6).toString()
+    } else {
+        parsedStart.plusDays(29).toString()
+    }
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -82,59 +62,39 @@ fun BudgetScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        //  existing form starts here
+        // Name input
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it
-                budgetViewModel.budgetSuccess = false },
+            onValueChange = { name = it; budgetViewModel.budgetSuccess = false },
             label = { Text("Name") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
-
+        // --- Editable START date
         OutlinedTextField(
             value = startDate,
             onValueChange = { startDate = it },
-            label = { Text("Start Date (yyyy-mm-dd)") },
+            label = { Text("Start Date") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // --- System-calculated END date
         OutlinedTextField(
             value = endDate,
-            onValueChange = { endDate = it },
-            label = { Text("End Date (yyyy-mm-dd)") },
+            onValueChange = {},
+            label = { Text("End Date (auto)") },
+            readOnly = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(modifier = Modifier.height(20.dp))
 
-//        ExposedDropdownMenuBox(
-//            expanded = isDateExpanded,
-//            onExpandedChange = { isDateExpanded = !isDateExpanded },
-//        ) {
-//            TextField(
-//                modifier = Modifier.menuAnchor().fillMaxWidth(),
-//                value = selectedDate.toString(),
-//                onValueChange = {},
-//                readOnly = true,
-//                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDateExpanded) }
-//            )
-//            ExposedDropdownMenu(expanded = isDateExpanded, onDismissRequest = { isDateExpanded = false }) {
-//                date.forEachIndexed { index, day ->
-//                    DropdownMenuItem(
-//                        text = { Text(text = day.toString()) },
-//                        onClick = {
-//                            selectedDate = date[index]
-//                            isDateExpanded = false
-//                        },
-//                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-//                    )
-//                }
-//            }
-//        }
-//
-//        Text(text = "Currently selected: $selectedDate")
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+
+        // Budget Type Dropdown
         ExposedDropdownMenuBox(
             expanded = isTypeExpanded,
             onExpandedChange = { isTypeExpanded = !isTypeExpanded },
@@ -142,16 +102,19 @@ fun BudgetScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = chosenType,
-                onValueChange = {budgetViewModel.budgetSuccess = false},
+                onValueChange = { budgetViewModel.budgetSuccess = false },
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTypeExpanded) }
             )
-            ExposedDropdownMenu(expanded = isTypeExpanded, onDismissRequest = { isTypeExpanded = false }) {
-                type.forEachIndexed { index, text ->
+            ExposedDropdownMenu(
+                expanded = isTypeExpanded,
+                onDismissRequest = { isTypeExpanded = false }
+            ) {
+                type.forEach { text ->
                     DropdownMenuItem(
                         text = { Text(text = text) },
                         onClick = {
-                            chosenType = type[index]
+                            chosenType = text
                             isTypeExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -162,6 +125,7 @@ fun BudgetScreen(
 
         Text(text = "Currently selected: $chosenType")
 
+        // Category Dropdown
         ExposedDropdownMenuBox(
             expanded = isCategoryExpanded,
             onExpandedChange = { isCategoryExpanded = !isCategoryExpanded },
@@ -169,16 +133,19 @@ fun BudgetScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = chosenCategory,
-                onValueChange = {budgetViewModel.budgetSuccess = false},
+                onValueChange = { budgetViewModel.budgetSuccess = false },
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
             )
-            ExposedDropdownMenu(expanded = isCategoryExpanded, onDismissRequest = { isCategoryExpanded = false }) {
-                categories.forEachIndexed { index, text ->
+            ExposedDropdownMenu(
+                expanded = isCategoryExpanded,
+                onDismissRequest = { isCategoryExpanded = false }
+            ) {
+                categories.forEach { text ->
                     DropdownMenuItem(
                         text = { Text(text = text) },
                         onClick = {
-                            chosenCategory = categories[index]
+                            chosenCategory = text
                             isCategoryExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -191,16 +158,17 @@ fun BudgetScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Amount input
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toIntOrNull() ?: 0
-                budgetViewModel.budgetSuccess = false},
+            onValueChange = { amount = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Savings switch
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
@@ -212,15 +180,29 @@ fun BudgetScreen(
                 onCheckedChange = { checked = it }
             )
         }
+
+        // Save button
         Button(
-            onClick = { budgetViewModel.onAddBudget(name, chosenType, chosenCategory, amount, checked, startDate, endDate) },
+            onClick = {
+                budgetViewModel.onAddBudget(
+                    name,
+                    chosenType,
+                    chosenCategory,
+                    amount,
+                    checked,
+                    startDate,
+                    endDate
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
             Text("Save")
         }
-        if (budgetError){
+
+        // Error or Success messages
+        if (budgetError) {
             Text(
                 "Budget Creation failed. \nPlease check for any incorrect values",
                 color = Color.Red,
@@ -228,7 +210,7 @@ fun BudgetScreen(
             )
         }
 
-        if (budgetSuccess){
+        if (budgetSuccess) {
             name = ""
             amount = 0
             Text(
@@ -237,8 +219,5 @@ fun BudgetScreen(
                 modifier = Modifier.padding(16.dp),
             )
         }
-
-
     }
 }
-
