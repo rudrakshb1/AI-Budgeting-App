@@ -21,6 +21,8 @@ import com.github.mikephil.charting.formatter.IFillFormatter
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.toArgb
+
 
 @Composable
 fun LineChart(
@@ -31,6 +33,12 @@ fun LineChart(
     trackLineColor: Int = Color.rgb(59,130,246),
     showLastDot: Boolean = true,
 ) {
+
+    val cSurface = MaterialTheme.colorScheme.surface.toArgb()
+    val cOnSurface = MaterialTheme.colorScheme.onSurface.toArgb()
+    val cOnSurfaceVar = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val cError = MaterialTheme.colorScheme.error.toArgb()
+
     Column(
         modifier = Modifier
             .padding(vertical = 16.dp)
@@ -54,6 +62,14 @@ fun LineChart(
                     description.isEnabled = false
                     legend.isEnabled = false
                     setNoDataText("Loading…")
+
+
+                    setBackgroundColor(cSurface)
+                    setNoDataTextColor(cOnSurfaceVar)
+                    legend.textColor = cOnSurface
+                    xAxis.textColor = cOnSurfaceVar
+                    axisLeft.textColor = cOnSurfaceVar
+
                     setDrawGridBackground(false)
 
                     setTouchEnabled(false)
@@ -109,7 +125,7 @@ fun LineChart(
                         setDrawCircles(true)
                         setCircleColor(trackLineColor)
                         circleRadius = 5f
-                        setCircleHoleColor(Color.WHITE)
+                        setCircleHoleColor(cSurface)
                         circleHoleRadius = 2.5f
                         isHighlightEnabled = false
                         setDrawFilled(false)
@@ -130,8 +146,8 @@ fun LineChart(
                         addLimitLine(
                             LimitLine(limitVal, "Budget Limit").apply {
                                 lineWidth = 2f
-                                lineColor = Color.RED
-                                textColor = Color.RED
+                                lineColor = cError
+                                textColor = cError
                                 enableDashedLine(10f, 6f, 0f)
                                 labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
                             }
@@ -148,7 +164,7 @@ fun LineChart(
 }
 
 private fun verticalFadeDrawable(baseColor: Int): GradientDrawable {
-    val top = Color.argb(60, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)) // 연하게
+    val top = Color.argb(60, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
     val bottom = Color.argb(0, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
     return GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(top, bottom))
 }

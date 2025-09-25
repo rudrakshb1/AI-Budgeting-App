@@ -5,7 +5,8 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.tasks.await
 class AccountRepository(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore
@@ -43,5 +44,24 @@ class AccountRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun ensureUserProfileDoc() {
+        val user = auth.currentUser ?: return
+        val doc = db.collection("users").document(user.uid)
+
+        val snap = doc.get().await()
+        val base = mutableMapOf<String, Any>(
+            "uid" to user.uid,
+            "email" to (user.email ?: ""),
+            "displayName" to (user.displayName ?: ""),
+            "lastLoginAt" to FieldValue.serverTimestamp()
+        )
+        if (!snap.exists()) {
+            base["createdAt"] = FieldValue.serverTimestamp()
+        }
+
+        // DO NOT DELETE - this merges users data
+        doc.set(base, SetOptions.merge()).await()
     }
 }

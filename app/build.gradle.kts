@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation("io.coil-kt:coil-compose:2.3.0")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
+
 
     implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
     implementation("com.google.firebase:firebase-analytics")

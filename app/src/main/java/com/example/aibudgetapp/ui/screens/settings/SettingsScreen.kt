@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
+import com.example.aibudgetapp.ui.theme.LocalThemeController
+import com.example.aibudgetapp.ui.theme.ThemeMode
 
 
 @Composable
@@ -42,7 +44,15 @@ fun SettingsScreen(
     onConfirmEditName: (String) -> Unit,
     onDeleteAccount: () -> Unit,
 ) {
+
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    val themeController = LocalThemeController.current
+
     val tiles = listOf(
+        SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
+        SettingTileData("Themes", Icons.Filled.DarkMode, {showThemeDialog = true}),
         SettingTileData("Passcode", Icons.Filled.Lock, onNavigatePasscode),
         SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
         SettingTileData("Export Data", Icons.Filled.Storage, onNavigateExport),
@@ -53,8 +63,6 @@ fun SettingsScreen(
     var showEdit by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf(uiState.displayName) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -237,6 +245,35 @@ fun SettingsScreen(
                 }
             }
         }
+
+        if (showThemeDialog) {
+            AlertDialog(
+                onDismissRequest = { showThemeDialog = false },
+                title = { Text("Theme") },
+                text = {
+                    Column {
+                        TextButton(onClick = {
+                            themeController.mode = ThemeMode.FollowSystem
+                            showThemeDialog = false
+                        }) { Text("Follow system") }
+
+                        TextButton(onClick = {
+                            themeController.mode = ThemeMode.Light
+                            showThemeDialog = false
+                        }) { Text("Light") }
+
+                        TextButton(onClick = {
+                            themeController.mode = ThemeMode.Dark
+                            showThemeDialog = false
+                        }) { Text("Dark") }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {}
+            )
+        }
+
+
 
         if (showDeleteConfirm) {
             AlertDialog(
