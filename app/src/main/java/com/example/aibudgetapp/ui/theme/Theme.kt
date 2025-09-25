@@ -9,37 +9,70 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Teal,
-    secondary = BrightOrange,
-    background = Cream,
-    onBackground = DarkNavy,
-    onPrimary = Cream
-)
+
 
 private val LightColorScheme = lightColorScheme(
-    primary = Teal,
-    secondary = BrightOrange,
-    background = DarkNavy,
-    onBackground = Cream,
-    onPrimary = Cream
+    primary = LightPrimary,
+    onPrimary = LightCard,
+    secondary = AccentGreen,
+    onSecondary = LightCard,
+    background = LightCanvas,
+    onBackground = LightText,
+    surface = LightCard,
+    onSurface = LightText,
+    surfaceVariant = LightCanvas,
+    onSurfaceVariant = LightText2,
+    outline = LightOutline,
 )
+
+private val DarkColorScheme = darkColorScheme(
+    primary = DarkPrimary,
+    onPrimary = DarkCard,
+    secondary = AccentGreen,
+    onSecondary = DarkCard,
+    background = DarkCanvas,
+    onBackground = DarkText,
+    surface = DarkCard,
+    onSurface = DarkText,
+    surfaceVariant = DarkCanvas,
+    onSurfaceVariant = DarkText2,
+    outline = DarkOutline,
+)
+
+enum class ThemeMode { FollowSystem, Light, Dark }
+
+@Stable
+class ThemeController {
+    var mode by mutableStateOf(ThemeMode.FollowSystem)
+}
+
+val LocalThemeController = staticCompositionLocalOf { ThemeController() }
 
 @Composable
 fun AIBudgetAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    mode: ThemeMode = LocalThemeController.current.mode,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val dark = when (mode) {
+        ThemeMode.FollowSystem -> systemDark
+        ThemeMode.Light -> false
+        ThemeMode.Dark -> true
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
-        darkTheme -> DarkColorScheme
+        dark -> DarkColorScheme
         else -> LightColorScheme
     }
 

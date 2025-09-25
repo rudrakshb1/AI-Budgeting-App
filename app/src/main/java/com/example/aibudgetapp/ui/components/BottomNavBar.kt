@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material3.MaterialTheme
+
 
 // TODO: Replace Material icons with custom SVGs, similar to the ones on Figma
 import androidx.compose.material.icons.Icons
@@ -28,30 +30,30 @@ fun BottomNavBar(
 ) {
     Column {
         HorizontalDivider(
-            color = Color.LightGray,
+            color = MaterialTheme.colorScheme.outline,
             thickness = 1.dp,
             modifier = Modifier.fillMaxWidth()
         )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavItem(
-                icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
+                icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = MaterialTheme.colorScheme.onSurface) },
                 label = "Home",
                 onClick = onHomeClick
             )
             NavItem(
-                icon = { Icon(Icons.Filled.Add, contentDescription = "Budget", tint = Color.Black) },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Budget", tint = MaterialTheme.colorScheme.onSurface) },
                 label = "Budget",
                 onClick = onBudgetClick
             )
             NavItem(
-                icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
+                icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface) },
                 label = "Settings",
                 onClick = onSettingsClick
             )
@@ -73,7 +75,7 @@ private fun NavItem(
     ) {
         icon()
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, color = Color.Black, fontSize = 12.sp)
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
     }
 }
 
