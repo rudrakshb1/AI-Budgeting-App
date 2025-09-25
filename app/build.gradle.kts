@@ -65,6 +65,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.patrykandpatrick.vico:compose:1.13.0")
     implementation("com.patrykandpatrick.vico:core:1.13.0")

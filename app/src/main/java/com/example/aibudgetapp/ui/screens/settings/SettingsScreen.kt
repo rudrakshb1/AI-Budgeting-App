@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.aibudgetapp.ui.screens.settings
 
 import com.example.aibudgetapp.ui.screens.settings.SettingsUiState
@@ -19,7 +20,7 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +45,7 @@ fun SettingsScreen(
     onNavigateUploads: () -> Unit = {},
     onNavigateFaq: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onConfirmEditName: (String) -> Unit,
 ) {
     val tiles = listOf(
         SettingTileData("Passcode", Icons.Filled.Lock, onNavigatePasscode),
@@ -52,6 +54,10 @@ fun SettingsScreen(
         SettingTileData("Uploaded Data", Icons.Filled.UploadFile, onNavigateUploads),
         SettingTileData("FAQ", Icons.Filled.HelpOutline, onNavigateFaq),
     )
+
+    var showEdit by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf(uiState.displayName) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         topBar = {
@@ -82,34 +88,91 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AssistChip(
-                    onClick = onEditProfile,
-                    label = { Text("Edit profile") },
-                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
-                )
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(uiState.avatarInitials, fontSize = 14.sp)
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    Text(uiState.displayName, fontSize = 12.sp)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    AssistChip(
+                        onClick = {
+                            newName = uiState.displayName
+                            showEdit = true
+                            onEditProfile()
+                        },
+                        label = { Text("Edit Profile") },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
+                    )
                 }
 
-                AssistChip(
-                    onClick = onAddUser,
-                    label = { Text("Add user") },
-                    leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) }
-                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(uiState.avatarInitials, fontSize = 16.sp)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(uiState.displayName, fontSize = 14.sp)
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    AssistChip(
+                        onClick = onAddUser,
+                        label = { Text("Add user") },
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) }
+                    )
+                }
+            }
+
+            if (showEdit) {
+                ModalBottomSheet(
+                    onDismissRequest = { showEdit = false },
+                    sheetState = sheetState
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
+                    ) {
+                        Text("Edit profile", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            singleLine = true,
+                            label = { Text("Display name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { showEdit = false }) { Text("Cancel") }
+                            Spacer(Modifier.width(8.dp))
+                            Button(
+                                enabled = newName.isNotBlank(),
+                                onClick = {
+                                    onConfirmEditName(newName.trim())
+                                    showEdit = false
+                                }
+                            ) { Text("Save") }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -134,13 +197,12 @@ fun SettingsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 TextButton(onClick = onLogout) {
-                    Text("Log out")
+                    Text("Log Out")
                 }
             }
         }
     }
 }
-
 
 private data class SettingTileData(
     val title: String,
@@ -211,14 +273,13 @@ private fun SettingTile(data: SettingTileData) {
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 private fun PreviewSettings() {
     MaterialTheme {
         SettingsScreen(
-            uiState = SettingsUiState(displayName = "Preview User", avatarInitials = "P")
+            uiState = SettingsUiState(displayName = "Preview User", avatarInitials = "P"),
+            onConfirmEditName = {}
         )
     }
 }
-

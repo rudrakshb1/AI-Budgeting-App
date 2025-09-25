@@ -19,6 +19,11 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFac
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
+
+
 
 sealed class Screen {
     object HOME : Screen()
@@ -30,7 +35,7 @@ sealed class Screen {
 }
 
 @Composable
-fun ScreenContainer(userName: String) {
+fun ScreenContainer(userName: String, onLogout: () -> Unit) {
     val screenContainerViewModel: ScreenContainerViewModel = viewModel()
 
     // Use the Factory to create ViewModel with repo dependency
@@ -59,7 +64,19 @@ fun ScreenContainer(userName: String) {
                             screenContainerViewModel.navigateTo(Screen.RECEIPTFLOW(uri))
                         }
                     )
-                    Screen.SETTINGS -> SettingsScreen()
+                    Screen.SETTINGS -> {
+                        val settingsViewModel: SettingsViewModel = viewModel()
+
+                        SettingsScreen(
+                            uiState = settingsViewModel.uiState,
+                            onAddUser = settingsViewModel::onAddUserClick,
+                            onLogout  = onLogout,
+                            onConfirmEditName = { newName ->
+                                settingsViewModel.onEditProfileConfirm(newName)
+                            }
+                        )
+                    }
+
                     Screen.BUDGETOVERVIEW -> BudgetOverviewScreen(
                         onAddBudgetClick = { screenContainerViewModel.navigateTo(Screen.BUDGET) }
                     )
