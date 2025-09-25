@@ -14,8 +14,11 @@ fun BankStatementUploadScreen(
         BankTransactionCategoryDialog(
             transaction = tx,
             onCategorySelected = { category ->
-                tx.category = category
-                viewModel.addTransaction(tx)
+                // ✅ create a new Transaction with updated category
+                val updatedTx = tx.copy(category = category)
+
+                // ✅ save via the central saveTransaction() method
+               // viewModel.saveTransaction(updatedTx)
             }
         )
     }

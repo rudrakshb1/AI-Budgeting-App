@@ -10,6 +10,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import android.net.Uri
+
 @Composable
 fun CategoryDialog(
     merchant: String,
@@ -71,7 +73,10 @@ fun CategoryDialog(
                         category = finalCategory,
                         date = formattedDate
                     )
-                    addTransactionViewModel.addTransaction(transaction)
+                    addTransactionViewModel.onSaveTransaction(
+                        category = finalCategory,
+                        imageUri = Uri.EMPTY // or the real receipt Uri if available
+                    )
                     onSaveComplete(finalCategory)
                 },
                 enabled = finalCategory.isNotBlank()
