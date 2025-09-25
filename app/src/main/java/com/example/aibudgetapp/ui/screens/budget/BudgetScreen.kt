@@ -30,9 +30,6 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
     // Always fetch budgets when screen opens
     LaunchedEffect(Unit) { budgetViewModel.fetchBudgets() }
 
-    // Observe budget list
-    val budgets by budgetViewModel.budgetList.observeAsState(emptyList())
-
     // Tab selection
     var selectedTab by remember { mutableStateOf(BudgetTab.OVERVIEW) }
 

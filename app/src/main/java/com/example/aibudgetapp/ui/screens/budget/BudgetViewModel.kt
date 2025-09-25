@@ -30,9 +30,8 @@ class BudgetViewModel(
     var budgets by mutableStateOf<List<Budget>>(emptyList())
         private set
 
-    // LiveData-backed list
-    private val _budgetList = MutableLiveData<List<Budget>>()
-    val budgetList: LiveData<List<Budget>> = _budgetList
+    var filteredBudget by mutableStateOf<List<Budget>>(emptyList())
+        private set
 
     fun addBudget(b: Budget) {
         repository.addBudget(
@@ -75,8 +74,8 @@ class BudgetViewModel(
         repository.getBudgets(
             onSuccess = { list ->
                 budgets = list
-                _budgetList.value = list   // 🔹 keep LiveData in sync
                 isLoading = false
+                filterBudgetByCategory("")
             },
             onFailure = { e ->
                 isLoading = false
@@ -93,16 +92,10 @@ class BudgetViewModel(
         )
     }
 
-    fun fetchbudgetcategory(category: String) {
-        repository.getbudgetcategory(
-            category = category,
-            onSuccess = { budgets ->
-                _budgetList.value = budgets
-            },
-            onFailure = { e ->
-                budgetError = true
-            }
-        )
+    fun filterBudgetByCategory(category: String) {
+        filteredBudget = budgets
+            .filter { it.chosenCategory.contains(category, true) }
+            .sortedBy { it.name }
     }
 
     fun getBudgetPieChartData(
