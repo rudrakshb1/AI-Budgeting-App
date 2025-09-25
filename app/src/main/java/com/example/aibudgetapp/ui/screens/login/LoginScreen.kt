@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,6 +25,12 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showResetDialog by remember { mutableStateOf(false) }
+    val loginViewModel = remember { LoginViewModel() }
+    val forgotPasswordSuccess by remember { derivedStateOf { loginViewModel.forgotPasswordSuccess } }
+    val forgotPasswordError by remember { derivedStateOf { loginViewModel.forgotPasswordError } }
+    val forgotPasswordSuccessMessage by remember { derivedStateOf { loginViewModel.forgotPasswordSuccessMessage } }
+    val forgotPasswordErrorMessage by remember { derivedStateOf { loginViewModel.forgotPasswordErrorMessage } }
 
     Column(
         modifier = Modifier
@@ -39,19 +47,40 @@ fun LoginScreen(
         )
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it; if (loginError) onClearError() },
+            onValueChange = { email = it; if (loginError) onClearError()
+                            loginViewModel.forgotPasswordSuccess = false
+                            loginViewModel.forgotPasswordError = false },
             label = { Text("Username") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it; if (loginError) onClearError() },
+            onValueChange = { password = it; if (loginError) onClearError()
+                            loginViewModel.forgotPasswordSuccess = false
+                            loginViewModel.forgotPasswordError = false },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
+
+        // Forgot password?
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(
+                onClick = {
+                    showResetDialog = true
+                }
+            ) {
+                Text("Forgot password?")
+            }
+        }
+
 
         Button(
             onClick = { onLogin(email, password) },
@@ -64,6 +93,20 @@ fun LoginScreen(
         if (loginError) {
             Text(
                 text = loginErrorMessage ?: "Login failed",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+        if (forgotPasswordSuccess) {
+            Text(
+                text = forgotPasswordSuccessMessage,
+                color = Color.Green,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+        if (forgotPasswordError) {
+            Text(
+                text = forgotPasswordErrorMessage ?: "Failed to send password reset email.",
                 color = Color.Red,
                 modifier = Modifier.padding(top = 16.dp)
             )
@@ -81,7 +124,42 @@ fun LoginScreen(
             TextButton(onClick = onRegister) {
                 Text("Register")
             }
+        }
+    }
+
+    if (showResetDialog) {
+        var resetEmailInput by remember { mutableStateOf(email) }
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset Password") },
+            text = {
+                Column {
+                    Text("Enter your email address to reset your password.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = resetEmailInput,
+                        onValueChange = { resetEmailInput = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResetDialog = false
+                        loginViewModel.sendPasswordResetEmail(resetEmailInput)
+                    }
+                ) {
+                    Text("Send Reset Link")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
             }
+        )
     }
 }
 
@@ -92,6 +170,6 @@ fun LoginPreview() {
         onLogin = { email, pw ->  },
         onRegister = {  },
         loginError = false,
-        loginErrorMessage = ""
+        loginErrorMessage = "",
     )
 }

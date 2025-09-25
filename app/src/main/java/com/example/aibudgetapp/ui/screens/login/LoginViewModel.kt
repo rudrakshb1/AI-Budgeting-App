@@ -29,6 +29,17 @@ class LoginViewModel : ViewModel() {
     var currentUid by mutableStateOf<String?>(null)
         private set
 
+    var forgotPasswordSuccess by mutableStateOf(false)
+
+    var forgotPasswordSuccessMessage by mutableStateOf("")
+        private set
+
+    var forgotPasswordError by mutableStateOf(false)
+
+    var forgotPasswordErrorMessage by mutableStateOf<String?>(null)
+        private set
+
+
     private fun mapAuthErrorShort(e: Exception): String = when (e) {
         is FirebaseAuthInvalidCredentialsException,
         is FirebaseAuthInvalidUserException -> "Invalid email or password."
@@ -71,4 +82,26 @@ class LoginViewModel : ViewModel() {
         loginError = false
         loginErrorMessage = null
     }
+
+    fun sendPasswordResetEmail(email: String) {
+        val email = email
+
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    forgotPasswordSuccess = true
+                    forgotPasswordSuccessMessage = "Password reset email sent to ${email}."
+                } else {
+                    forgotPasswordError = true
+                    forgotPasswordErrorMessage = when (task.exception) {
+                        is FirebaseAuthInvalidUserException -> "This email is not registered."
+                        is FirebaseNetworkException -> "Network error. Please check your connection and try again."
+                        else -> "Failed to send password reset email. Please try again later."
+                    }
+
+                }
+            }
+    }
+
+
 }
