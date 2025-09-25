@@ -11,13 +11,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,9 +21,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.BorderStroke
 
 
 @Composable
@@ -46,6 +40,7 @@ fun SettingsScreen(
     onNavigateFaq: () -> Unit = {},
     onLogout: () -> Unit = {},
     onConfirmEditName: (String) -> Unit,
+    onDeleteAccount: () -> Unit,
 ) {
     val tiles = listOf(
         SettingTileData("Passcode", Icons.Filled.Lock, onNavigatePasscode),
@@ -58,6 +53,8 @@ fun SettingsScreen(
     var showEdit by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf(uiState.displayName) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -188,6 +185,45 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(tiles) { tile -> SettingTile(tile) }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .height(120.dp)
+                            .fillMaxWidth()
+                            .clickable { showDeleteConfirm = true },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Delete Account",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Text(
+                                text = "Delete account",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
 
             Box(
@@ -200,6 +236,31 @@ fun SettingsScreen(
                     Text("Log Out")
                 }
             }
+        }
+
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            onDeleteAccount()
+                        }
+                    ) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text("Cancel")
+                    }
+                },
+                title = {
+                    Text("DELETE ACCOUNT?", color = MaterialTheme.colorScheme.error)
+                },
+                text = {
+                    Text("This will permanently remove your account and data.")
+                }
+            )
         }
     }
 }
@@ -273,13 +334,3 @@ private fun SettingTile(data: SettingTileData) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun PreviewSettings() {
-    MaterialTheme {
-        SettingsScreen(
-            uiState = SettingsUiState(displayName = "Preview User", avatarInitials = "P"),
-            onConfirmEditName = {}
-        )
-    }
-}
