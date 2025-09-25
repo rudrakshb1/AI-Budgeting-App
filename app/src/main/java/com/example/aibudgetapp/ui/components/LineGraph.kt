@@ -20,6 +20,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.IFillFormatter
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import androidx.compose.ui.graphics.toArgb
 
 @Composable
 fun LineChart(
@@ -35,6 +36,12 @@ fun LineChart(
     showLegend: Boolean = true,
     showLastDot: Boolean = true,
 ) {
+
+    val cSurface = MaterialTheme.colorScheme.surface.toArgb()
+    val cOnSurface = MaterialTheme.colorScheme.onSurface.toArgb()
+    val cOnSurfaceVar = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val cError = MaterialTheme.colorScheme.error.toArgb()
+
     Column(
         modifier = Modifier
             .padding(vertical = 16.dp)
@@ -60,6 +67,14 @@ fun LineChart(
                     description.isEnabled = false
                     legend.isEnabled = showLegend
                     setNoDataText("Loading…")
+
+
+                    setBackgroundColor(cSurface)
+                    setNoDataTextColor(cOnSurfaceVar)
+                    legend.textColor = cOnSurface
+                    xAxis.textColor = cOnSurfaceVar
+                    axisLeft.textColor = cOnSurfaceVar
+
                     setDrawGridBackground(false)
                     setTouchEnabled(false)
 

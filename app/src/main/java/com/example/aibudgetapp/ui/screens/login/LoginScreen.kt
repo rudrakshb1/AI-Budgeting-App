@@ -50,7 +50,7 @@ fun LoginScreen(
             onValueChange = { email = it; if (loginError) onClearError()
                             loginViewModel.forgotPasswordSuccess = false
                             loginViewModel.forgotPasswordError = false },
-            label = { Text("Username") },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
 

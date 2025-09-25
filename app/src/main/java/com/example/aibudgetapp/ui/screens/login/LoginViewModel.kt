@@ -11,6 +11,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
     private val auth: FirebaseAuth = Firebase.auth
@@ -65,6 +67,17 @@ class LoginViewModel : ViewModel() {
                     loginError = false
                     loginErrorMessage = null
                     currentUid = u?.uid
+
+                    viewModelScope.launch {
+                        try {
+                            val repo = com.example.aibudgetapp.data.AccountRepository(
+                                auth = com.google.firebase.auth.FirebaseAuth.getInstance(),
+                                db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                            )
+                            repo.ensureUserProfileDoc()
+                        } catch (_: Exception) {
+                        }
+                    }
 
                 } else {
                     // Login failed
