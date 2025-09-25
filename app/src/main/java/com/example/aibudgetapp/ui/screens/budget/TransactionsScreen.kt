@@ -48,8 +48,8 @@ fun TransactionsScreen(viewModel: AddTransactionViewModel) { // <-- Passed from 
 
         if (!transactionError && txList.isEmpty()) {
             Text(
-                text = "Failed to fetch transaction",
-                color = Color.Red,
+                text = "No transaction found",
+                color = Color.Black,
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
