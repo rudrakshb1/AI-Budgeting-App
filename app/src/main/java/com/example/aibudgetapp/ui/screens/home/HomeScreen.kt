@@ -9,23 +9,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.ui.components.LineChart
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
 import com.example.aibudgetapp.ui.screens.screenContainer.Screen
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
+import com.example.aibudgetapp.ui.screens.settings.SettingsUiState
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.theme.*
 
 @Composable
 fun HomeScreen(
-    userName: String,
+    uiState: SettingsUiState,
     screenContainerViewModel: ScreenContainerViewModel,
 ) {
     val homeViewModel = remember { HomeViewModel(BudgetRepository(), TransactionRepository()) }
 
-    LaunchedEffect(Unit) {
+        LaunchedEffect(Unit) {
         homeViewModel.getMonthlyBudgetList()
         homeViewModel.getWeeklyBudgetList()
         homeViewModel.get12MonthlyTransaction()
@@ -62,7 +62,7 @@ fun HomeScreen(
             ) {
                 item {
                     Greeting(
-                        name = userName,
+                        name = uiState.displayName,
                         modifier = Modifier
                             .fillMaxWidth()
                     )
@@ -150,11 +150,11 @@ fun Greeting(
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun HomePreview() {
-    HomeScreen(
-        userName = ".",
-        screenContainerViewModel = remember { ScreenContainerViewModel() },
-    )
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun HomePreview() {
+//    HomeScreen(
+//        userName = ".",
+//        screenContainerViewModel = remember { ScreenContainerViewModel() },
+//    )
+//}
