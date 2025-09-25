@@ -8,4 +8,6 @@ data class Budget (
     val chosenCategory: String,
     val amount: Int,
     val checked: Boolean,
+    val startDate: String? = null,
+    val endDate: String? = null
 )

@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+private const val WEEKS_PER_MONTH = 52.0 / 12.0
+
 class HomeViewModel(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository
@@ -49,14 +51,19 @@ class HomeViewModel(
     var weekLabels = mutableStateListOf<String>()
         private set
 
-
     fun getMonthlyBudget() {
+
         budgetError = false
         budgetRepository.getBudgets(
             onSuccess = { list ->
                 monthlyBudget = list
                     .filter { it.chosenType.equals("monthly", ignoreCase = true) }
                     .sumOf { it.amount }
+                weeklyBudget = list
+                    .filter { it.chosenType.equals("weekly", ignoreCase = true) }
+                    .sumOf { it.amount }
+
+                monthlyBudget += (weeklyBudget * WEEKS_PER_MONTH).toInt()
             },
             onFailure = { e ->
                 budgetError = true
@@ -70,7 +77,7 @@ class HomeViewModel(
             onSuccess = { list ->
                 monthlySpent = list
                     .filter { it.date.contains(yearMonth.toString(), ignoreCase = true) }
-                    .sumOf { it.amount }
+                    .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
             },
             onFailure = { e ->
                 transactionError = true
@@ -90,7 +97,8 @@ class HomeViewModel(
                 onSuccess = { list ->
                     val sum = list
                         .filter { it.date.contains(yearMonth.toString(), ignoreCase = true) }
-                        .sumOf { it.amount }
+                        .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
 
                     monthlyListTransaction.add(0, sum)
                 },
@@ -134,7 +142,10 @@ class HomeViewModel(
                             false
                         }
                     }
-                    .sumOf { it.amount }
+                    .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
+
+
             },
             onFailure = { e ->
                 transactionError = true
@@ -170,7 +181,8 @@ class HomeViewModel(
                                 false
                             }
                         }
-                        .sumOf { it.amount }
+                        .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
+
 
                     weeklyListTransaction.add(0, sum)
                 },

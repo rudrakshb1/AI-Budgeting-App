@@ -25,6 +25,8 @@ fun BudgetItemCard(budget: Budget) {
             Text(text = "Category: ${budget.chosenCategory}", style = MaterialTheme.typography.bodySmall)
             Text(text = "Type: ${budget.chosenType}", style = MaterialTheme.typography.bodySmall)
             // Text(text = "Date: ${budget.selectedDate}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "From: ${budget.startDate}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "To: ${budget.endDate}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

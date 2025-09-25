@@ -78,6 +78,7 @@ dependencies {
 
     // Coroutines support for Task.await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation(libs.androidx.compose.runtime.livedata)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("com.github.yalantis:ucrop:2.2.8")
     // CameraX core libs
@@ -95,12 +96,9 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.google.mlkit:text-recognition-chinese:16.0.0")
     implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
-
-
-
-
-
-
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("com.github.yalantis:ucrop:2.2.8")
+    implementation("com.github.CanHub:Android-Image-Cropper:4.3.2")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -109,4 +107,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.compose.runtime:runtime-livedata")
+
 }

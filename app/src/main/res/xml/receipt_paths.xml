@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="receipt_images" path="images/" />
+
+    <!-- Internal app cache (used by UCrop & FileProvider) -->
+    <cache-path name="internal_cache" path="." />
+
+    <!-- External app cache -->
+    <external-cache-path name="external_cache" path="." />
+
+    <!-- App external files in Pictures/Receipts -->
+    <external-path name="external_files" path="Pictures/Receipts/" />
+
 </paths>

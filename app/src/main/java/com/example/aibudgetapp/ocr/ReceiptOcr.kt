@@ -73,14 +73,27 @@ object ReceiptOcr {
 
         // 1. Try to pick currency-marked value, on clean lines
         val currCandidates = res.textBlocks.flatMap { block ->
-            block.lines.mapNotNull { line ->
+            block.lines.flatMap { line ->
                 val text = line.text.trim()
                 if (currencyRegex.containsMatchIn(text) && !ignoreRegex.containsMatchIn(text)) {
-                    val amtMatch = amountRegex.find(text)
-                    amtMatch?.value?.replace(",", ".")?.let { cleanToDouble(it) }
-                } else null
+                    val elements = line.elements.map { it.text.trim() }
+                    val joinedCandidates = mutableListOf<Double>()
+                    for (i in 0 until elements.size - 1) {
+                        val a = elements[i]
+                        val b = elements[i + 1]
+                        val combined = (a + b).replace(",", "").replace(" ", "")
+                        cleanToDouble(combined)?.let { joinedCandidates.add(it) }
+                    }
+                    val singles = elements.mapNotNull { cleanToDouble(it.replace(",", ".")) }
+                    joinedCandidates + singles
+                } else {
+                    emptyList<Double>()
+                }
             }
         }
+
+
+
         if (currCandidates.isNotEmpty()) return currCandidates.maxOrNull()
 
         // 2. Scan next 1–5 lines after any "Total" label, ignore distractors, take highest value w/ decimal (signifies money, not ID)

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +31,9 @@ fun RegistrationScreen(
     onRegister: (email: String, password: String, firstName: String, lastName: String?) -> Unit,
     onCancel: () -> Unit,
     registrationError: Boolean,
-    registrationErrorMessage: String?
+    registrationErrorMessage: String?,
+    isRegistered: Boolean,
+    onSuccessAcknowledged: () -> Unit
 
 ) {
     var email by remember { mutableStateOf("") }
@@ -48,8 +51,15 @@ fun RegistrationScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "AI Budgeting App",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -121,6 +131,19 @@ fun RegistrationScreen(
             TextButton(onClick = onCancel) {
                 Text("Login")
             }
+        }
+
+        if (isRegistered) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = onSuccessAcknowledged,
+                title = { Text("Account created") },
+                text = { Text("Your account has been created successfully. Please log in.") },
+                confirmButton = {
+                    TextButton(onClick = onSuccessAcknowledged) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }
