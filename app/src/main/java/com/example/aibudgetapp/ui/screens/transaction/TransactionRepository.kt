@@ -26,36 +26,26 @@ class TransactionRepository {
         Log.d("REPOSITORY", "Firestore push: $transaction")
         try {
             LocalDate.parse(transaction.date)
-            val map = hashMapOf(
-                "id" to transaction.id,
-                "description" to transaction.description,
-                "amount" to transaction.amount,
-                "category" to transaction.category,
-                "date" to transaction.date,
-            )
-            userTransactionRef()
-                .add(map)
-                .addOnSuccessListener { ref ->
-                    val newId = ref.id
-                    Log.d("REPOSITORY", "Firestore add: Success. Ref=$ref, NewID=$newId")
-                    ref.update("id", newId)
-                        .addOnSuccessListener {
-                            Log.d("REPOSITORY", "ID field updated in Firestore to $newId")
-                            onSuccess()
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("REPOSITORY", "Failed to update Firestore ID: ${e.message}")
-                            onFailure(e)
-                        }
+
+            // Create a new Firestore docRef so we know the ID
+            val docRef = userTransactionRef().document()
+            val txWithId = transaction.copy(id = docRef.id)
+
+            docRef.set(txWithId)
+                .addOnSuccessListener {
+                    Log.d("REPOSITORY", "Firestore add: Success. ID=${docRef.id}")
+                    onSuccess()
                 }
                 .addOnFailureListener { e ->
                     Log.e("REPOSITORY", "Failed Firestore add: ${e.message}")
                     onFailure(e)
                 }
+
         } catch (e: DateTimeParseException) {
             onFailure(e)
         }
     }
+
 
     fun getTransactions(
         onSuccess: (List<Transaction>) -> Unit,
@@ -69,7 +59,7 @@ class TransactionRepository {
                     val list = snapshot.documents.map { doc ->
                         val data = doc.data ?: emptyMap<String, Any?>()
                         Transaction(
-                            id = (data["id"] as? String) ?: doc.id,
+                            id = doc.id,
                             description = data["description"] as? String ?: "",
                             amount = when (val v = data["amount"]) {
                                 is Number -> v.toDouble()

@@ -30,17 +30,6 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
     // Always fetch budgets when screen opens
     LaunchedEffect(Unit) { budgetViewModel.fetchBudgets() }
 
-    // Observe budget list
-    val budgets by budgetViewModel.budgetList.observeAsState(emptyList())
-
-    // Currently selected budget
-    var selectedBudget by remember { mutableStateOf<Budget?>(null) }
-    LaunchedEffect(budgets) {
-        if (selectedBudget == null && budgets.isNotEmpty()) {
-            selectedBudget = budgets.first()
-        }
-    }
-
     // Tab selection
     var selectedTab by remember { mutableStateOf(BudgetTab.OVERVIEW) }
 
@@ -78,40 +67,6 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            //  Budget selector only on Spending tab
-            if (selectedTab == BudgetTab.SPENDING && budgets.isNotEmpty()) {
-                var expanded by remember { mutableStateOf(false) }
-                Box {
-                    Button(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            selectedBudget?.let { "${it.name} (${it.chosenType})" }
-                                ?: "Select Budget"
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        budgets.forEach { budget ->
-                            DropdownMenuItem(
-                                text = { Text("${budget.name} (${budget.chosenType})") },
-                                onClick = {
-                                    selectedBudget = budget
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                selectedBudget?.let {
-                    Text(
-                        "Current:\nName: ${it.name}\nType: ${it.chosenType}\nCategory: ${it.chosenCategory}\nAmount: $${it.amount}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                } ?: Text("No budget selected")
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
             //  Tab contents
             when (selectedTab) {
                 BudgetTab.OVERVIEW -> {
@@ -119,12 +74,10 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
                     OverviewScreen()
                 }
                 BudgetTab.SPENDING -> {
-                    selectedBudget?.let {
-                        SpendingScreen(
-                            addTransactionViewModel = transactionViewModel,
-                            selectedBudget = it
-                        )
-                    } ?: Text("Please select a budget to view spending")
+                    SpendingScreen(
+                        addTransactionViewModel = transactionViewModel,
+                        budgetViewModel = budgetViewModel
+                    )
                 }
                 BudgetTab.TRANSACTIONS -> {
                     TransactionsScreen(viewModel = transactionViewModel)
