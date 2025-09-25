@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 
@@ -20,6 +21,7 @@ fun BudgetScreen(
 
     // form states
     var name by remember { mutableStateOf("") }
+    var recursive by remember { mutableStateOf(0) }
     var amount by remember { mutableStateOf(0) }
     val type = listOf("Weekly", "Monthly")
     var chosenType by remember { mutableStateOf(type[0]) }
@@ -31,11 +33,20 @@ fun BudgetScreen(
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
     // --- Auto-calculate end date whenever start/type changes ---
-    val parsedStart = runCatching { LocalDate.parse(startDate) }.getOrElse { LocalDate.now() }
-    val endDate = if (chosenType == "Weekly") {
-        parsedStart.plusDays(6).toString()
+    val endDate = if (recursive != 0) {
+        val start = LocalDate.parse(startDate)
+        if (chosenType.equals("Weekly", ignoreCase = true)) {
+            start.plusDays((7L * recursive) - 1).toString()
+        } else {
+            val endRaw = start.plusMonths(recursive.toLong())
+            if (endRaw.dayOfMonth == start.dayOfMonth) {
+                endRaw.minusDays(1).toString()
+            } else {
+                endRaw.toString()
+            }
+        }
     } else {
-        parsedStart.plusDays(29).toString()
+        startDate
     }
 
     Column(
@@ -43,7 +54,7 @@ fun BudgetScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
     ) {
         // Top bar with Back button + Title
         Row(
@@ -60,8 +71,6 @@ fun BudgetScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
         // Name input
         OutlinedTextField(
             value = name,
@@ -70,11 +79,21 @@ fun BudgetScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(20.dp))
+
         // --- Editable START date
         OutlinedTextField(
             value = startDate,
             onValueChange = { startDate = it },
             label = { Text("Start Date") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // --- Editable Recursive
+        OutlinedTextField(
+            value = recursive.toString(),
+            onValueChange = { recursive = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
+            label = { Text("Recursive") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -87,12 +106,7 @@ fun BudgetScreen(
             readOnly = true,
             modifier = Modifier.fillMaxWidth(),
         )
-
-
         Spacer(modifier = Modifier.height(12.dp))
-
-        Spacer(modifier = Modifier.height(12.dp))
-
 
         // Budget Type Dropdown
         ExposedDropdownMenuBox(
@@ -156,7 +170,7 @@ fun BudgetScreen(
 
         Text(text = "Currently selected: $chosenCategory")
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Amount input
         OutlinedTextField(
@@ -166,7 +180,7 @@ fun BudgetScreen(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Savings switch
         Row(
@@ -196,7 +210,7 @@ fun BudgetScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
+                .padding(top = 8.dp)
         ) {
             Text("Save")
         }
@@ -206,7 +220,8 @@ fun BudgetScreen(
             Text(
                 "Budget Creation failed. \nPlease check for any incorrect values",
                 color = Color.Red,
-                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp),
             )
         }
 
@@ -216,7 +231,8 @@ fun BudgetScreen(
             Text(
                 "Budget Successfully Created",
                 color = Color.Green,
-                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp),
             )
         }
     }

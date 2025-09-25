@@ -17,7 +17,6 @@ import com.example.aibudgetapp.ui.screens.screenContainer.Screen
 import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.theme.*
-import java.time.YearMonth
 
 @Composable
 fun HomeScreen(
@@ -27,21 +26,21 @@ fun HomeScreen(
     val homeViewModel = remember { HomeViewModel(BudgetRepository(), TransactionRepository()) }
 
     LaunchedEffect(Unit) {
-        homeViewModel.getMonthlyBudget()
-        homeViewModel.getWeeklyBudget()
-        homeViewModel.getMonthlyTransaction(YearMonth.now())
+        homeViewModel.getMonthlyBudgetList()
+        homeViewModel.getWeeklyBudgetList()
         homeViewModel.get12MonthlyTransaction()
-        homeViewModel.getWeeklyTransaction()
         homeViewModel.get12WeeklyTransaction()
     }
 
-    val monthlyBudget = homeViewModel.monthlyBudget
-    val monthlySpent = homeViewModel.monthlySpent
+    val monthlyBudget = homeViewModel.monthlyBudgetList.lastOrNull() ?: 0
+    val monthlyBudgetList = homeViewModel.monthlyBudgetList
+    val monthlySpent = homeViewModel.monthlyListTransaction.lastOrNull() ?: 0.0
     val monthly12Spent = homeViewModel.monthlyListTransaction
     val monthLabels = homeViewModel.monthLabels
 
-    val weeklyBudget = homeViewModel.weeklyBudget
-    val weeklySpent = homeViewModel.weeklySpent
+    val weeklyBudget = homeViewModel.weeklyBudgetList.lastOrNull() ?: 0
+    val weeklyBudgetList = homeViewModel.weeklyBudgetList
+    val weeklySpent = homeViewModel.weeklyListTransaction.lastOrNull() ?: 0.0
     val weekly12Spent = homeViewModel.weeklyListTransaction
     val weekLabels = homeViewModel.weekLabels
 
@@ -90,9 +89,9 @@ fun HomeScreen(
                 item {
                     LineChart(
                         values = monthly12Spent,
+                        compareValues = monthlyBudgetList,
                         xLabels = monthLabels,
-                        limitY = monthlyBudget,
-                        title = "Monthly Spendings"
+                        title = "Monthly Spendings",
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -117,8 +116,8 @@ fun HomeScreen(
                 item {
                     LineChart(
                         values = weekly12Spent,
+                        compareValues = weeklyBudgetList,
                         xLabels = weekLabels,
-                        limitY = weeklyBudget,
                         title = "Weekly Spendings"
                     )
                     Spacer(Modifier.height(48.dp))
