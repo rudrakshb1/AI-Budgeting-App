@@ -117,6 +117,13 @@ class AddTransactionViewModel(
     fun resetSavedFlag() { transactionSaved = false }
 
     fun onSaveTransaction(category: String, imageUri: Uri) {
+        if (transactionSaved) {
+            Log.w("DUPLICATE_CHECK", " Blocked duplicate save")
+            return
+        }
+        transactionSaved = true
+        Log.d("DUPLICATE_CHECK", "Saving transaction started")
+
         ocrResult?.let { parsed ->
             val transaction = Transaction(
                 id = "",
@@ -125,12 +132,13 @@ class AddTransactionViewModel(
                 category = category,
                 date = LocalDate.now().toString()
             )
-            addTransaction(t = transaction)
-            transactionSaved = true
+            addTransaction(transaction)
         }
+
         showCategoryDialog = false
         ocrResult = null
     }
+
 
     fun addTransaction(t: Transaction) {
         Log.d("Add_Transaction", "Saving transaction to repository: $t")
@@ -236,33 +244,27 @@ class AddTransactionViewModel(
         rawText: String,
         imageUri: Uri,
     ) {
-        val tx = Transaction(
-            id = "",
-            description = merchant.ifBlank { "Unknown" },
-            amount = total,
-            category = "Uncategorized",
-            date = LocalDate.now().toString()
+        // Just prepare the OCR result
+        ocrResult = ParsedReceipt(
+            merchant = merchant.ifBlank { "Unknown" },
+            total = total,
+            dateEpochMs = System.currentTimeMillis(),
+            rawText = rawText
         )
 
-        repository.addTransaction(
-            transaction = tx,
-            onSuccess = {
-                fetchTransactions()
-                updateSpendingByCategory() // NEW: update
-            },
-            onFailure = { e -> transactionError = true }
-        )
+
+        showCategoryDialog = true   // ask user to pick category
     }
+
+
 
     fun addFromParsed(parsed: ParsedReceipt, imageUri: Uri) {
-        Log.d("VIEWMODEL", "Saving Transaction: merchant=${parsed.merchant}, total=${parsed.total}")
-        addFromOcr(
-            merchant = parsed.merchant,
-            total = parsed.total,
-            rawText = parsed.rawText,
-            imageUri = imageUri
-        )
+        Log.d("VIEWMODEL", "Parsed Receipt: merchant=${parsed.merchant}, total=${parsed.total}")
+        ocrResult = parsed
+        showCategoryDialog = true
+        //  Don't call addFromOcr() here, wait for user confirmation
     }
+
     fun importTransactions(transactions: List<Transaction>) {
         transactions.forEach { tx ->
             repository.addTransaction(

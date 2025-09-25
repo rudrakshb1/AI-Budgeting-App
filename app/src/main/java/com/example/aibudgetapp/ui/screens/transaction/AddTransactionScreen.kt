@@ -93,16 +93,20 @@ fun AddTransactionScreen(
         // everything below stays the same (manual transaction form, list, etc.)
         OutlinedTextField(
             value = transactionDate,
-            onValueChange = { transactionDate = it
-                addTransactionViewModel.transactionSuccess = false },
+            onValueChange = {
+                transactionDate = it
+                addTransactionViewModel.transactionSuccess = false
+            },
             label = { Text("Date (yyyy-mm-dd)") },
             modifier = Modifier.fillMaxWidth(),
         )
 
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toDoubleOrNull() ?: 0.0
-                addTransactionViewModel.transactionSuccess = false },
+            onValueChange = {
+                amount = it.toDoubleOrNull() ?: 0.0
+                addTransactionViewModel.transactionSuccess = false
+            },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -114,7 +118,7 @@ fun AddTransactionScreen(
             TextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
                 value = selected,
-                onValueChange = { addTransactionViewModel.transactionSuccess = false},
+                onValueChange = { addTransactionViewModel.transactionSuccess = false },
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
             )
@@ -134,36 +138,42 @@ fun AddTransactionScreen(
 
         Text(text = "Currently selected: $selected")
 
-        Button(
-            onClick = {
-                addTransactionViewModel.onAddTransaction(
-                    description = "",
-                    amount = amount,
-                    category = selected,
-                    date = transactionDate
+        // ✅ Only show manual add flow if no OCR result is waiting
+        if (addTransactionViewModel.ocrResult == null) {
+            Button(
+                onClick = {
+                    addTransactionViewModel.onAddTransaction(
+                        description = "",
+                        amount = amount,
+                        category = selected,
+                        date = transactionDate
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Text("Save")
+            }
+
+            if (transactionError) {
+                Text(
+                    text = "Failed to add transaction",
+                    color = Color.Red,
+                    modifier = Modifier.padding(top = 16.dp),
                 )
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-        ) {
-            Text("Save")
+            }
+
+            if (transactionSuccess) {
+                transactionDate = LocalDate.now().toString()
+                amount = 0.0
+                Text(
+                    text = "Transaction Saved",
+                    color = Color.Green,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
         }
 
-        if (transactionError) {
-            Text(
-                text = "Failed to add transaction",
-                color = Color.Red,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
-
-        if (transactionSuccess) {
-            transactionDate = LocalDate.now().toString()
-            amount = 0.0
-            Text(
-                text = "Transaction Saved",
-                color = Color.Green,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
     }
 }
