@@ -20,6 +20,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.IFillFormatter
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import androidx.compose.ui.graphics.toArgb
 
 @Composable
 fun LineChart(
