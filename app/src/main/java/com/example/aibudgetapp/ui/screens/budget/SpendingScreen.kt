@@ -30,6 +30,7 @@ fun SpendingScreen(
     // Load budgets initially (if needed)
     LaunchedEffect(Unit) {
         budgetViewModel.fetchBudgets()
+        addTransactionViewModel.fetchTransactions()
     }
 
     // Show UI depending on budgets state
@@ -168,52 +169,36 @@ fun SpendingScreen(
         "Food & Drink", "Rent", "Vacation", "Groceries", "Transport", "Bills"
     )
 
+    val barChartXAxisLabels = fixedCategories + "Other"
+
     // --- Group transactions globally, sum each category ---
     val transactionByCategory = addTransactionViewModel.transactions.groupBy { it.category }
 
-    val categorySpending = fixedCategories.map { cat ->
-        cat to (transactionByCategory[cat]?.sumOf { it.amount ?: 0.0 } ?: 0.0)
+    val displaySpending by remember(addTransactionViewModel.transactions, fixedCategories) {
+        derivedStateOf {
+            val spendingByCategory = fixedCategories.associateWith { cat ->
+                transactionByCategory[cat]?.sumOf { it.amount ?: 0.0 } ?: 0.0
+            }
+            // --- Sum everything NOT in your fixed list under "Other" ---
+            val otherCategorySpending = addTransactionViewModel.transactions
+                .filter { it.category !in fixedCategories }
+                .sumOf { it.amount ?: 0.0 }
+
+            val result = fixedCategories.map { it to (spendingByCategory[it] ?: 0.0) } +
+                    listOf("Other" to otherCategorySpending)
+            result
+        }
     }
-
-    // --- Sum everything NOT in your fixed list under "Other" ---
-    val otherSpending = addTransactionViewModel.transactions
-        .filter { it.category !in fixedCategories }
-        .sumOf { it.amount ?: 0.0 }
-
-    val displaySpending = categorySpending + listOf("Other" to otherSpending)
 
     AndroidView(
         factory = { context ->
             BarChart(context).apply {
-                val entries = displaySpending.mapIndexed { idx, entry ->
-                    BarEntry(idx.toFloat(), entry.second.toFloat())
-                }
-                val dataSet = BarDataSet(entries, "Categories").apply {
-                    colors = listOf(
-                        android.graphics.Color.parseColor("#90CAF9"), // Food & Drink
-                        android.graphics.Color.parseColor("#A5D6A7"), // Rent
-                        android.graphics.Color.parseColor("#FFD700"), // Vacation
-                        android.graphics.Color.parseColor("#60BD68"), // Groceries
-                        android.graphics.Color.parseColor("#FFAB91"), // Transport
-                        android.graphics.Color.parseColor("#CE93D8"), // Bills
-                        android.graphics.Color.parseColor("#F17CB0")  // Other
-                    )
-                    valueTextSize = 14f
-                    valueTextColor = android.graphics.Color.DKGRAY
-                    setDrawValues(true)
-                }
-                val data = BarData(dataSet)
-                data.barWidth = 0.5f
-                this.data = data
-
                 description.isEnabled = false
                 setDrawValueAboveBar(true)
                 setFitBars(true)
                 animateY(900)
 
-                // --- Correct X-axis configuration ---
                 xAxis.apply {
-                    valueFormatter = IndexAxisValueFormatter(fixedCategories + "Other")
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
                     setDrawAxisLine(true)
@@ -229,6 +214,32 @@ fun SpendingScreen(
                 axisRight.isEnabled = false
                 legend.isEnabled = false
             }
+        },
+        update = { chart ->
+            val entries = displaySpending.mapIndexed { idx, entry ->
+                BarEntry(idx.toFloat(), entry.second.toFloat())
+            }
+            val dataSet = BarDataSet(entries, "Categories").apply {
+                colors = listOf(
+                    android.graphics.Color.parseColor("#90CAF9"),
+                    android.graphics.Color.parseColor("#A5D6A7"),
+                    android.graphics.Color.parseColor("#FFD700"),
+                    android.graphics.Color.parseColor("#60BD68"),
+                    android.graphics.Color.parseColor("#FFAB91"),
+                    android.graphics.Color.parseColor("#CE93D8"),
+                    android.graphics.Color.parseColor("#F17CB0")
+                )
+                valueTextSize = 14f
+                valueTextColor = android.graphics.Color.DKGRAY
+                setDrawValues(true)
+            }
+            val data = BarData(dataSet).apply {
+                barWidth = 0.5f
+            }
+
+            chart.data = data
+            chart.xAxis.valueFormatter = IndexAxisValueFormatter(barChartXAxisLabels)
+            chart.invalidate()
         },
         modifier = Modifier
             .fillMaxWidth()

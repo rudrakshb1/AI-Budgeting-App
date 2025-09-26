@@ -20,11 +20,6 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFactory
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
-import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewModel
-import com.example.aibudgetapp.data.AccountRepository
-import com.example.aibudgetapp.ui.screens.settings.SettingsViewModelFactory
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 sealed class Screen {
     object HOME : Screen()
@@ -36,7 +31,10 @@ sealed class Screen {
 }
 
 @Composable
-fun ScreenContainer(userName: String, onLogout: () -> Unit) {
+fun ScreenContainer(
+    settingsViewModel: SettingsViewModel,
+    onLogout: () -> Unit
+) {
     val screenContainerViewModel: ScreenContainerViewModel = viewModel()
 
     // Use the Factory to create ViewModel with repo dependency
@@ -57,7 +55,7 @@ fun ScreenContainer(userName: String, onLogout: () -> Unit) {
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (val screen = screenContainerViewModel.currentScreen) {
                     Screen.HOME -> HomeScreen(
-                        userName = userName,
+                        uiState = settingsViewModel.uiState,
                         screenContainerViewModel = screenContainerViewModel
                     )
 
@@ -69,25 +67,23 @@ fun ScreenContainer(userName: String, onLogout: () -> Unit) {
 
                     Screen.SETTINGS -> {
                         // Repo + VM factory wiring for Settings
-                        val repo = remember {
-                            AccountRepository(
-                                auth = FirebaseAuth.getInstance(),
-                                db = FirebaseFirestore.getInstance()
-                            )
-                        }
-                        val settingsViewModel: SettingsViewModel =
-                            viewModel(factory = SettingsViewModelFactory(repo))
 
                         SettingsScreen(
                             uiState = settingsViewModel.uiState,
                             onAddUser = settingsViewModel::onAddUserClick,
-                            onLogout = onLogout,
+                            onLogout = {
+                                screenContainerViewModel.navigateTo(Screen.HOME)
+                                onLogout()
+                            },
                             onConfirmEditName = { newName ->
                                 settingsViewModel.onEditProfileConfirm(newName)
                             },
                             onDeleteAccount = {
                                 settingsViewModel.deleteAccount(
-                                    onSuccess = { onLogout() }, // after deletion, return to login
+                                    onSuccess = {
+                                        screenContainerViewModel.navigateTo(Screen.HOME)
+                                        onLogout()
+                                    }, // after deletion, return to login
                                     onError = { /* TODO: show snackbar/toast */ }
                                 )
                             }
