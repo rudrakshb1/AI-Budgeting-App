@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,17 +20,18 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        defaultConfig {
-            val geminiKey = providers.gradleProperty("GEMINI_API_KEY")
-                .orElse(providers.environmentVariable("GEMINI_API_KEY"))
-                .getOrElse("")
-
-            if (geminiKey.isBlank()) {
-                logger.warn("GEMINI_API_KEY is blank — check gradle.properties or env var")
-            }
-
-            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+        val localProps = Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
         }
+
+        val geminiKeyProvider  = provider { localProps.getProperty("GEMINI_API_KEY") ?: "" }
+        val geminiKey = geminiKeyProvider.getOrElse("")
+        if (geminiKey.isBlank()) {
+            logger.warn("GEMINI_API_KEY is blank — check gradle.properties or env var")
+        }
+
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
     buildTypes {
