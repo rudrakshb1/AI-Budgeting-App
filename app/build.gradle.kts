@@ -17,6 +17,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        defaultConfig {
+            val geminiKey = providers.gradleProperty("GEMINI_API_KEY")
+                .orElse(providers.environmentVariable("GEMINI_API_KEY"))
+                .getOrElse("")
+
+            if (geminiKey.isBlank()) {
+                logger.warn("GEMINI_API_KEY is blank — check gradle.properties or env var")
+            }
+
+            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+        }
     }
 
     buildTypes {
@@ -30,6 +42,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
@@ -113,4 +126,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.runtime:runtime-livedata")
 
+    //AI
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
