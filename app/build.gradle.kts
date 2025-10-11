@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -17,6 +19,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProps = Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
+        }
+
+        val geminiKeyProvider  = provider { localProps.getProperty("GEMINI_API_KEY") ?: "" }
+        val geminiKey = geminiKeyProvider.getOrElse("")
+        if (geminiKey.isBlank()) {
+            logger.warn("GEMINI_API_KEY is blank — check gradle.properties or env var")
+        }
+
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
     buildTypes {
@@ -30,6 +45,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
@@ -113,4 +129,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.runtime:runtime-livedata")
 
+    //AI
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

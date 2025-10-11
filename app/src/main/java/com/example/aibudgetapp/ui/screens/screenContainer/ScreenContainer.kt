@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aibudgetapp.ui.components.BottomNavBar
@@ -14,6 +12,7 @@ import com.example.aibudgetapp.ui.screens.settings.SettingsScreen
 import com.example.aibudgetapp.ui.screens.budget.BudgetScreen
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionScreen
 import com.example.aibudgetapp.ui.screens.budget.BudgetOverviewScreen
+import com.example.aibudgetapp.ui.screens.chatbot.ChatbotScreen
 import com.example.aibudgetapp.ui.theme.AIBudgetAppTheme
 import com.example.aibudgetapp.ui.screens.transaction.ReceiptFlowScreen
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
@@ -28,6 +27,7 @@ sealed class Screen {
     object BUDGETOVERVIEW : Screen()
     object BUDGET : Screen()
     data class RECEIPTFLOW(val uri: Uri) : Screen()
+    object CHATBOT : Screen()
 }
 
 @Composable
@@ -48,7 +48,8 @@ fun ScreenContainer(
                 BottomNavBar(
                     onHomeClick = { screenContainerViewModel.navigateTo(Screen.HOME) },
                     onBudgetClick = { screenContainerViewModel.navigateTo(Screen.BUDGETOVERVIEW) },
-                    onSettingsClick = { screenContainerViewModel.navigateTo(Screen.SETTINGS) }
+                    onSettingsClick = { screenContainerViewModel.navigateTo(Screen.SETTINGS) },
+                    onChatbotClick = { screenContainerViewModel.navigateTo(Screen.CHATBOT) }
                 )
             }
         ) { innerPadding ->
@@ -64,7 +65,9 @@ fun ScreenContainer(
                             screenContainerViewModel.navigateTo(Screen.RECEIPTFLOW(uri))
                         }
                     )
+                    Screen.CHATBOT -> ChatbotScreen(
 
+                    )
                     Screen.SETTINGS -> {
                         // Repo + VM factory wiring for Settings
 

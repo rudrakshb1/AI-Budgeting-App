@@ -26,7 +26,8 @@ import androidx.compose.material.icons.filled.Settings
 fun BottomNavBar(
     onHomeClick: () -> Unit,
     onBudgetClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onChatbotClick: () -> Unit
 ) {
     Column {
         HorizontalDivider(
@@ -51,6 +52,11 @@ fun BottomNavBar(
                 icon = { Icon(Icons.Filled.Add, contentDescription = "Budget", tint = MaterialTheme.colorScheme.onSurface) },
                 label = "Budget",
                 onClick = onBudgetClick
+            )
+            NavItem(
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Chatbot", tint = MaterialTheme.colorScheme.onSurface) },
+                label = "Chatbot",
+                onClick = onChatbotClick
             )
             NavItem(
                 icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface) },
@@ -87,7 +93,8 @@ private fun BottomNavBarPreview() {
         BottomNavBar(
             onHomeClick = {},
             onBudgetClick = {},
-            onSettingsClick = {}
+            onSettingsClick = {},
+            onChatbotClick = {}
         )
     }
 }
