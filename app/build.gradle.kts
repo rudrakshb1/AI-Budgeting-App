@@ -128,6 +128,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.runtime:runtime-livedata")
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
     //AI
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")

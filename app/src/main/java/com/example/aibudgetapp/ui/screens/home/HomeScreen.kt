@@ -17,6 +17,15 @@ import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewMod
 import com.example.aibudgetapp.ui.screens.settings.SettingsUiState
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.theme.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.platform.LocalContext
+
 
 @Composable
 fun HomeScreen(
@@ -43,6 +52,8 @@ fun HomeScreen(
     val weeklySpent = homeViewModel.weeklyListTransaction.lastOrNull() ?: 0.0
     val weekly12Spent = homeViewModel.weeklyListTransaction
     val weekLabels = homeViewModel.weekLabels
+    val context = LocalContext.current
+
 
     AIBudgetAppTheme {
         Scaffold(
@@ -61,12 +72,19 @@ fun HomeScreen(
                 )
             ) {
                 item {
+                    Spacer(Modifier.height(48.dp))
+                }
+                item {
                     Greeting(
                         name = uiState.displayName,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        badgeCount = 0,
+                        onBellClick = {
+                            com.example.aibudgetapp.notifications.SimpleNotifier.showTest(context)
+                        }
                     )
                 }
+
 
                 item {
                     Text("📊 Monthly Overview",
@@ -141,13 +159,38 @@ fun HomeScreen(
 @Composable
 fun Greeting(
     name: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // NEW: props for bell UI
+    badgeCount: Int = 0,
+    onBellClick: () -> Unit = {}
 ) {
-    Text(
-        text = "Welcome, $name!",
-        modifier = modifier,
-        textAlign = TextAlign.Start
-    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Welcome, $name!",
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Start,
+            style = MaterialTheme.typography.titleLarge
+        )
+        //  NEW: bell with optional badge (kept 0 for now)
+        BadgedBox(
+            badge = {
+                if (badgeCount > 0) {
+                    Badge { Text(badgeCount.coerceAtMost(9).toString()) }
+                }
+            }
+        ) {
+            IconButton(onClick = onBellClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifications"
+
+                )
+            }
+        }
+    }
 }
 
 //@Preview(showBackground = true)
