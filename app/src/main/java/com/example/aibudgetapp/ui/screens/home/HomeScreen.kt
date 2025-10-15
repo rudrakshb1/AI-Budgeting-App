@@ -54,6 +54,16 @@ fun HomeScreen(
     val weekLabels = homeViewModel.weekLabels
     val context = LocalContext.current
 
+    // NEW: fire threshold checks when values change
+    LaunchedEffect(monthlyBudget, monthlySpent, weeklyBudget, weeklySpent) {
+        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyBudget(
+            context, "Monthly", monthlySpent, monthlyBudget.toDouble()
+        )
+        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyBudget(
+            context, "Weekly", weeklySpent, weeklyBudget.toDouble()
+        )
+    }
+
 
     AIBudgetAppTheme {
         Scaffold(
@@ -80,7 +90,7 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         badgeCount = 0,
                         onBellClick = {
-                            com.example.aibudgetapp.notifications.SimpleNotifier.showTest(context)
+                         //   com.example.aibudgetapp.notifications.SimpleNotifier.showTest(context)
                         }
                     )
                 }
