@@ -25,6 +25,11 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.platform.LocalContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.WeekFields
+
+
 
 
 @Composable
@@ -53,14 +58,20 @@ fun HomeScreen(
     val weekly12Spent = homeViewModel.weeklyListTransaction
     val weekLabels = homeViewModel.weekLabels
     val context = LocalContext.current
+    val now = LocalDate.now()
+    val monthId = now.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+    val wf = WeekFields.ISO
+    val weekId = "${now.get(wf.weekBasedYear())}-W${now.get(wf.weekOfWeekBasedYear())}"
+
 
     // NEW: fire threshold checks when values change
     LaunchedEffect(monthlyBudget, monthlySpent, weeklyBudget, weeklySpent) {
-        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyBudget(
-            context, "Monthly", monthlySpent, monthlyBudget.toDouble()
+        // If both cross on this update, both will send (two notifications). If only one crosses, only that one sends.
+        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyCrossing(
+            context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble()
         )
-        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyBudget(
-            context, "Weekly", weeklySpent, weeklyBudget.toDouble()
+        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyCrossing(
+            context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble()
         )
     }
 
