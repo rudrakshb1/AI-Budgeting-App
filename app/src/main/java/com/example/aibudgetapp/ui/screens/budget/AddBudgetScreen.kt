@@ -23,14 +23,16 @@ fun BudgetScreen(
     var name by remember { mutableStateOf("") }
     var recursive by remember { mutableStateOf(0) }
     var amount by remember { mutableStateOf(0) }
-    val type = listOf("Weekly", "Monthly")
+    val type = listOf("Weekly", "Monthly", "Yearly")
     var chosenType by remember { mutableStateOf(type[0]) }
-    val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
+    val categories = listOf("Food & Drink", "Rent", "Gas", "Mortgage", "Other")
     var chosenCategory by remember { mutableStateOf(categories[0]) }
     var isTypeExpanded by remember { mutableStateOf(false) }
     var isCategoryExpanded by remember { mutableStateOf(false) }
     var checked by remember { mutableStateOf(true) }
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
+    var isManualCategory by remember { mutableStateOf(false) }
+
 
     // --- Auto-calculate end date whenever start/type changes ---
     val endDate = if (recursive != 0) {
@@ -161,6 +163,7 @@ fun BudgetScreen(
                         onClick = {
                             chosenCategory = text
                             isCategoryExpanded = false
+                            isManualCategory = text == "Other"
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -169,6 +172,15 @@ fun BudgetScreen(
         }
 
         Text(text = "Currently selected: $chosenCategory")
+
+        if(isManualCategory){
+            OutlinedTextField(
+                value = chosenCategory,
+                onValueChange = { chosenCategory = it },
+                label = { Text("Manual Category") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
