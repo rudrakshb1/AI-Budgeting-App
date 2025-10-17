@@ -38,6 +38,7 @@ fun AddTransactionScreen(
 
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
     var croppingInProgress by rememberSaveable { mutableStateOf(false) }
+    var isSelectedCategory by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -129,6 +130,7 @@ fun AddTransactionScreen(
                         onClick = {
                             selected = text
                             isExpanded = false
+                            isSelectedCategory = text == "Other"
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -137,6 +139,15 @@ fun AddTransactionScreen(
         }
 
         Text(text = "Currently selected: $selected")
+
+        if(isSelectedCategory){
+            OutlinedTextField(
+                value = selected,
+                onValueChange = { selected = it },
+                label = { Text("Manual Category") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         // ✅ Only show manual add flow if no OCR result is waiting
         if (addTransactionViewModel.ocrResult == null) {
