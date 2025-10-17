@@ -19,6 +19,7 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFactory
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
+import com.example.aibudgetapp.notifications.NotificationsScreen
 
 sealed class Screen {
     object HOME : Screen()
@@ -28,6 +29,7 @@ sealed class Screen {
     object BUDGET : Screen()
     data class RECEIPTFLOW(val uri: Uri) : Screen()
     object CHATBOT : Screen()
+    object NOTIFICATIONS : Screen()
 }
 
 @Composable
@@ -55,9 +57,11 @@ fun ScreenContainer(
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (val screen = screenContainerViewModel.currentScreen) {
+
                     Screen.HOME -> HomeScreen(
                         uiState = settingsViewModel.uiState,
-                        screenContainerViewModel = screenContainerViewModel
+                        screenContainerViewModel = screenContainerViewModel,
+                        onBellClick = { screenContainerViewModel.navigateTo(Screen.NOTIFICATIONS) }
                     )
 
                     Screen.ADDTRANSACTION -> AddTransactionScreen(
@@ -65,12 +69,11 @@ fun ScreenContainer(
                             screenContainerViewModel.navigateTo(Screen.RECEIPTFLOW(uri))
                         }
                     )
-                    Screen.CHATBOT -> ChatbotScreen(
 
-                    )
+                    Screen.CHATBOT -> ChatbotScreen()
+
                     Screen.SETTINGS -> {
                         // Repo + VM factory wiring for Settings
-
                         SettingsScreen(
                             uiState = settingsViewModel.uiState,
                             onAddUser = settingsViewModel::onAddUserClick,
@@ -105,6 +108,10 @@ fun ScreenContainer(
                         imageUri = screen.uri,
                         addTransactionViewModel = addTransactionViewModel,
                         onComplete = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) }
+                    )
+
+                    Screen.NOTIFICATIONS -> NotificationsScreen(
+                        onBack = { screenContainerViewModel.navigateTo(Screen.HOME) }
                     )
                 }
             }
