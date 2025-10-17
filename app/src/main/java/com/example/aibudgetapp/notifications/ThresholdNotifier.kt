@@ -1,75 +1,202 @@
 package com.example.aibudgetapp.notifications
 
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.example.aibudgetapp.R
-import java.time.LocalDate
+import java.util.Locale
 
 object ThresholdNotifier {
+    private const val TAG = "Threshold"
     private const val PREFS = "budget_threshold_prefs"
     private const val THRESHOLD = 90.0 // percent
 
+    // Backfill state
+    private const val MIGRATION_PREFS = "notif_migrations"
+    private const val BACKFILLED_V1 = "notif_backfilled_v1"
+
+    /**
+     * One-time: write a history entry (NO system notification) if already ≥ THRESHOLD for this period
+     * AND we've previously been above (once-per-period latch is set).
+     *
+     * @param scale multiplies the given budget before computing percentages
+     *              (e.g. 10.0 to interpret 20 from the chart as 200 real dollars).
+     */
+    fun backfillIfNeeded(
+        context: Context,
+        label: String,      // "Weekly" or "Monthly"
+        periodId: String,   // e.g., "2025-W42" or "2025-10"
+        spent: Double,
+        budget: Double,
+        scale: Double = 1.0
+    ) {
+        val mig = context.getSharedPreferences(MIGRATION_PREFS, Context.MODE_PRIVATE)
+        val key = "$BACKFILLED_V1-$label-$periodId"
+        if (mig.getBoolean(key, false)) {
+            Log.d(TAG, "backfill: already backfilled for $label/$periodId")
+            return
+        }
+
+        val effBudget = budget * scale
+        if (effBudget <= 0.0) {
+            Log.d(TAG, "backfill: budget<=0, skip ($label/$periodId)")
+            return
+        }
+
+        val pct = (spent / effBudget) * 100.0
+
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val aboveKey = "above_${label.lowercase()}_$periodId"
+        val wasAbove = prefs.getBoolean(aboveKey, false)
+
+        Log.d(
+            TAG,
+            "backfill? label=$label period=$periodId spent=$spent budget(raw)=$budget scale=$scale effBudget=$effBudget pct=$pct wasAbove=$wasAbove"
+        )
+
+        var didLog = false
+        if (pct >= THRESHOLD && wasAbove) {
+            NotificationLog.log(
+                context,
+                NotificationEvent(
+                    id = System.currentTimeMillis(),
+                    label = label,
+                    periodId = periodId,
+                    percent = pct,
+                    spent = spent,
+                    budget = effBudget,
+                    message = "${label} budget ${"%.1f".format(Locale.US, pct)}% used (backfilled)",
+                    read = false
+                )
+            )
+            didLog = true
+            Log.d(TAG, "backfill: logged entry for $label/$periodId")
+        } else {
+            Log.d(TAG, "backfill: conditions not met (no log)")
+        }
+
+        if (didLog) mig.edit { putBoolean(key, true) }
+    }
+
     /**
      * Notify exactly once per period when crossing from <THRESHOLD to ≥THRESHOLD.
-     * Returns true if a notification was sent.
+     * Accepts a scale to convert chart budgets into real $ budgets.
      *
-     * @param label    "Weekly" or "Monthly"
-     * @param periodId e.g. "2025-W42" (weekly) or "2025-10" (monthly)
+     * @return true if a system notification was posted (and the event logged).
      */
     fun maybeNotifyCrossing(
         context: Context,
         label: String,
         periodId: String,
         spent: Double,
-        budget: Double
+        budget: Double,
+        scale: Double = 1.0
     ): Boolean {
-        if (budget <= 0.0) return false
+        val effBudget = budget * scale
+        if (effBudget <= 0.0) {
+            Log.d(TAG, "maybe: budget<=0, skip ($label/$periodId)")
+            return false
+        }
 
-        val pct = (spent / budget) * 100.0
+        val pct = (spent / effBudget) * 100.0
         val nowAbove = pct >= THRESHOLD
 
-        // Track state: were we already above for this period?
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val aboveKey = "above_${label.lowercase()}_$periodId"
         val wasAbove = prefs.getBoolean(aboveKey, false)
-        prefs.edit { putBoolean(aboveKey, nowAbove) }  // update for next time
+        prefs.edit { putBoolean(aboveKey, nowAbove) }
 
-        // Only alert on first crossing this period
+        Log.d(
+            TAG,
+            "maybe: label=$label period=$periodId spent=$spent budget(raw)=$budget scale=$scale effBudget=$effBudget pct=$pct wasAbove=$wasAbove nowAbove=$nowAbove"
+        )
+
         if (!wasAbove && nowAbove) {
-            if (Build.VERSION.SDK_INT >= 33 &&
-                ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) return false
+            val title =
+                if (spent >= effBudget) "$label budget exceeded" else "$label budget alert"
+            val text = buildText(spent, effBudget, label)
 
-            NotificationChannels.ensureCreated(context)
+            val posted = postSystemNotificationIfPermitted(
+                context = context,
+                label = label,
+                title = title,
+                text = text
+            )
 
-            fun fmt(v: Double) = String.format("%.2f", v)
-            val pctInt = pct.toInt()
-            val remaining = (budget - spent).coerceAtLeast(0.0)
-            val title = if (spent >= budget) "$label budget exceeded" else "$label budget alert"
-            val text = "$label budget is $${fmt(budget)}. Spent $${fmt(spent)} (${pctInt}%). " +
-                    "Remaining $${fmt(remaining)}."
-
-            val id = if (label == "Monthly") 2001 else 2002
-            val notif = NotificationCompat.Builder(context, NotificationChannels.CHANNEL_BUDGET_ALERTS)
-                .setSmallIcon(android.R.drawable.ic_dialog_info) // swap to app icon later
-                .setContentTitle(title)
-                .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-                .setAutoCancel(true)
-                .build()
-
-            NotificationManagerCompat.from(context).notify(id, notif)
-            return true
+            // Always log the in-app event (even if OS permission blocked the banner)
+            NotificationLog.log(
+                context,
+                NotificationEvent(
+                    id = System.currentTimeMillis(),
+                    label = label,
+                    periodId = periodId,
+                    percent = pct,
+                    spent = spent,
+                    budget = effBudget,
+                    message = text,
+                    read = false
+                )
+            )
+            Log.d(TAG, "maybe: logged entry for $label/$periodId (postedSystem=$posted)")
+            return posted
         }
 
+        Log.d(TAG, "maybe: no new alert (already above or still below)")
         return false
+    }
+
+    private fun buildText(spent: Double, budget: Double, label: String): String {
+        fun fmt(v: Double) = String.format(Locale.US, "%.2f", v)
+        val pctInt = ((spent / budget) * 100.0).toInt()
+        val remaining = (budget - spent).coerceAtLeast(0.0)
+        return "$label budget is $${fmt(budget)}. Spent $${fmt(spent)} (${pctInt}%). Remaining $${fmt(remaining)}."
+    }
+
+    private fun postSystemNotificationIfPermitted(
+        context: Context,
+        label: String,
+        title: String,
+        text: String
+    ): Boolean {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d(TAG, "post: notifications permission missing; skip system banner")
+            return false
+        }
+
+        NotificationChannels.ensureCreated(context)
+
+        // Use a safe built-in small icon to avoid missing resource errors.
+        val smallIcon = android.R.drawable.ic_dialog_info
+        val channelId = NotificationChannels.CHANNEL_BUDGET_ALERTS
+
+        val id = if (label == "Monthly") 2001 else 2002
+        val notif = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(smallIcon)                 // ← fixed: no missing R.drawable
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(id, notif)
+        Log.d(TAG, "post: posted system notification id=$id")
+        return true
+    }
+
+    /** Optional: clears the once-per-period latch for quick manual re-tests. */
+    fun resetThresholdState(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { clear() }
+        Log.d(TAG, "reset: cleared $PREFS")
     }
 }

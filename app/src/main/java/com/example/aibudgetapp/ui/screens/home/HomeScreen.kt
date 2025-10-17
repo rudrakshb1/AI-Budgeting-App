@@ -2,14 +2,18 @@ package com.example.aibudgetapp.ui.screens.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.aibudgetapp.notifications.NotificationLog
 import com.example.aibudgetapp.ui.components.LineChart
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
 import com.example.aibudgetapp.ui.screens.screenContainer.Screen
@@ -17,26 +21,57 @@ import com.example.aibudgetapp.ui.screens.screenContainer.ScreenContainerViewMod
 import com.example.aibudgetapp.ui.screens.settings.SettingsUiState
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.theme.*
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.compose.runtime.*
+import android.content.pm.PackageManager
+import com.example.aibudgetapp.notifications.ThresholdNotifier
 
 
+
+
+
+
+@Composable
+private fun EnsureNotifPermission() {
+    if (Build.VERSION.SDK_INT >= 33) {
+        val context = LocalContext.current
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { /* granted/denied — no-op */ }
+
+        LaunchedEffect(Unit) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+}
+// chart → real-money scale for alerts (20 on chart == 200 real)
+private const val BUDGET_SERIES_SCALE_FOR_ALERTS = 10.0
 
 
 @Composable
 fun HomeScreen(
     uiState: SettingsUiState,
     screenContainerViewModel: ScreenContainerViewModel,
+    onBellClick: () -> Unit = {}
+
 ) {
+    EnsureNotifPermission()
     val homeViewModel = remember { HomeViewModel(BudgetRepository(), TransactionRepository()) }
 
         LaunchedEffect(Unit) {
@@ -64,16 +99,42 @@ fun HomeScreen(
     val weekId = "${now.get(wf.weekBasedYear())}-W${now.get(wf.weekOfWeekBasedYear())}"
 
 
-    // NEW: fire threshold checks when values change
+    // fire threshold checks when values change
     LaunchedEffect(monthlyBudget, monthlySpent, weeklyBudget, weeklySpent) {
-        // If both cross on this update, both will send (two notifications). If only one crosses, only that one sends.
-        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyCrossing(
-            context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble()
-        )
-        com.example.aibudgetapp.notifications.ThresholdNotifier.maybeNotifyCrossing(
-            context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble()
-        )
+        ThresholdNotifier.backfillIfNeeded(context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble(),
+            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
+        ThresholdNotifier.backfillIfNeeded(context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble(),
+            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
+        ThresholdNotifier.maybeNotifyCrossing(context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble(),
+            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
+        ThresholdNotifier.maybeNotifyCrossing(context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble(),
+            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
     }
+
+    //  TEMPORARY TEST BLOCK
+   // LaunchedEffect("force-threshold-test") {
+    //    ThresholdNotifier.resetThresholdState(context) // resets latch to fire again
+    //    ThresholdNotifier.maybeNotifyCrossing(
+    //        context = context,
+    //        label = "Monthly",
+     //       periodId = monthId,
+     //       spent = 190.0,   // fake test to cross 90%
+      //      budget = 20.0,   // raw 20 x scale (10) = 200 → 190/200 = 95%
+      //      scale = BUDGET_SERIES_SCALE_FOR_ALERTS
+      //  )
+   // }
+
+
+
+
+    var badgeCount by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        // refresh when entering Home; opening Notifications screen will mark as read
+        badgeCount = NotificationLog.getUnreadCount(context)
+    }
+
+
 
 
     AIBudgetAppTheme {
@@ -99,10 +160,8 @@ fun HomeScreen(
                     Greeting(
                         name = uiState.displayName,
                         modifier = Modifier.fillMaxWidth(),
-                        badgeCount = 0,
-                        onBellClick = {
-                         //   com.example.aibudgetapp.notifications.SimpleNotifier.showTest(context)
-                        }
+                        badgeCount = badgeCount,
+                        onBellClick = onBellClick
                     )
                 }
 
