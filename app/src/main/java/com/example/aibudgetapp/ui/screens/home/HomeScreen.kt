@@ -61,7 +61,7 @@ private fun EnsureNotifPermission() {
     }
 }
 // chart → real-money scale for alerts (20 on chart == 200 real)
-private const val BUDGET_SERIES_SCALE_FOR_ALERTS = 10.0
+//private const val BUDGET_SERIES_SCALE_FOR_ALERTS = 10.0
 
 
 @Composable
@@ -101,14 +101,18 @@ fun HomeScreen(
 
     // fire threshold checks when values change
     LaunchedEffect(monthlyBudget, monthlySpent, weeklyBudget, weeklySpent) {
-        ThresholdNotifier.backfillIfNeeded(context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble(),
-            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
-        ThresholdNotifier.backfillIfNeeded(context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble(),
-            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
-        ThresholdNotifier.maybeNotifyCrossing(context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble(),
-            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
-        ThresholdNotifier.maybeNotifyCrossing(context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble(),
-            scale = BUDGET_SERIES_SCALE_FOR_ALERTS) // added here
+        ThresholdNotifier.backfillIfNeeded(
+            context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble()
+        )
+        ThresholdNotifier.backfillIfNeeded(
+            context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble()
+        )
+        ThresholdNotifier.maybeNotifyCrossing(
+            context, "Weekly", weekId, weeklySpent, weeklyBudget.toDouble()
+        )
+        ThresholdNotifier.maybeNotifyCrossing(
+            context, "Monthly", monthId, monthlySpent, monthlyBudget.toDouble()
+        )
     }
 
     //  TEMPORARY TEST BLOCK
