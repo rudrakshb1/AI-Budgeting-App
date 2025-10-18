@@ -9,6 +9,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,8 +24,8 @@ fun BudgetScreen(
 
     // form states
     var name by remember { mutableStateOf("") }
-    var recursive by remember { mutableStateOf(0) }
-    var amount by remember { mutableStateOf(0) }
+    var recursion by remember { mutableStateOf(1) }
+    var amount by remember { mutableStateOf(0.0) }
     val type = listOf("Weekly", "Monthly", "Yearly")
     var chosenType by remember { mutableStateOf(type[0]) }
     val categories = listOf("Food & Drink", "Rent", "Gas", "Mortgage", "Other")
@@ -35,12 +38,12 @@ fun BudgetScreen(
 
 
     // --- Auto-calculate end date whenever start/type changes ---
-    val endDate = if (recursive != 0) {
+    val endDate = if (recursion != 0) {
         val start = LocalDate.parse(startDate)
         if (chosenType.equals("Weekly", ignoreCase = true)) {
-            start.plusDays((7L * recursive) - 1).toString()
+            start.plusDays((7L * recursion) - 1).toString()
         } else {
-            val endRaw = start.plusMonths(recursive.toLong())
+            val endRaw = start.plusMonths(recursion.toLong())
             if (endRaw.dayOfMonth == start.dayOfMonth) {
                 endRaw.minusDays(1).toString()
             } else {
@@ -93,9 +96,12 @@ fun BudgetScreen(
 
         // --- Editable Recursive
         OutlinedTextField(
-            value = recursive.toString(),
-            onValueChange = { recursive = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
-            label = { Text("Recursive") },
+            value = recursion.toString(),
+            onValueChange = {
+                recursion = max(1, it.toIntOrNull() ?: 1)
+                budgetViewModel.budgetSuccess = false
+            },
+            label = { Text("Recursion") },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -187,7 +193,12 @@ fun BudgetScreen(
         // Amount input
         OutlinedTextField(
             value = amount.toString(),
-            onValueChange = { amount = it.toIntOrNull() ?: 0; budgetViewModel.budgetSuccess = false },
+            onValueChange = {
+                val parsed = it.toDoubleOrNull()?.times(100) ?: 0.0
+                val limited = min(parsed, 999999999.0)
+                amount = floor(limited) / 100
+                budgetViewModel.budgetSuccess = false
+            },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -239,7 +250,7 @@ fun BudgetScreen(
 
         if (budgetSuccess) {
             name = ""
-            amount = 0
+            amount = 0.0
             Text(
                 "Budget Successfully Created",
                 color = Color.Green,
