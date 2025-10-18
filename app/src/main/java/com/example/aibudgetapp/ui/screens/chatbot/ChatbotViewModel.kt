@@ -34,7 +34,13 @@ class ChatbotViewModel : ViewModel() {
                 val prompt = if (userText.trim() == "/ping")
                     "Reply with exactly: OK"
                 else
-                    userText
+                    """
+                    You are a chatbot that only answers questions about budgets and transactions.
+                    - If the question is related to budgets, spending, expenses, income, or transactions, answer normally.
+                    - If the question is not related, reply with exactly: "I can only help with budgets and transactions."
+                    
+                    User: $userText
+                    """
 
                 val raw = GeminiClient.postText(prompt)
                 Log.d("ChatbotVM", "Gemini raw: $raw")

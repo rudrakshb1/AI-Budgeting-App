@@ -55,7 +55,7 @@ class BudgetRepository {
                             // selectedDate = (data["selecteddate"] as? Number)?.toInt() ?: 0,
                             chosenType = data["chosentype"] as? String ?: "",
                             chosenCategory = data["chosencategory"] as? String ?: "",
-                            amount = (data["amount"] as? Number)?.toInt() ?: 0,
+                            amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
                             checked = data["checked"] as? Boolean ?: false,
                             startDate = data["startDate"] as? String,
                             endDate = data["endDate"] as? String
@@ -104,7 +104,7 @@ class BudgetRepository {
                         name = cate["name"] as? String ?: "",
                         chosenType = cate["chosentype"] as? String ?: "",
                         chosenCategory = cate["chosencategory"] as? String ?: "",
-                        amount = (cate["amount"] as? Number)?.toInt() ?: 0,
+                        amount = (cate["amount"] as? Number)?.toDouble() ?: 0.0,
                         checked = cate["checked"] as? Boolean ?: false,
                         startDate = cate["startDate"] as? String,
                         endDate = cate["endDate"] as? String

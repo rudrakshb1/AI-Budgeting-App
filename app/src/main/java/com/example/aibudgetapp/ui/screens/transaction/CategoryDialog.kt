@@ -11,6 +11,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import android.net.Uri
+import com.example.aibudgetapp.constants.DATE_FORMAT
 
 @Composable
 fun CategoryDialog(
@@ -25,7 +26,7 @@ fun CategoryDialog(
     val categories = listOf("Food", "Transport", "Shopping", "Bills", "Other")
     // format date from millis
     val formattedDate = remember(date) {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val formatter = DateTimeFormatter.ofPattern(DATE_FORMAT)
         Instant.ofEpochMilli(date)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()

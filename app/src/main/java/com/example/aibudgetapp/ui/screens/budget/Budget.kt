@@ -6,7 +6,7 @@ data class Budget (
     // val selectedDate: Int,
     val chosenType: String,
     val chosenCategory: String,
-    val amount: Int,
+    val amount: Double,
     val checked: Boolean,
     val startDate: String? = null,
     val endDate: String? = null

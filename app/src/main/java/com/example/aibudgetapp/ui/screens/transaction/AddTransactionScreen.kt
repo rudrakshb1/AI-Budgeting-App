@@ -18,7 +18,8 @@ import androidx.activity.result.ActivityResult
 import com.yalantis.ucrop.UCrop
 import androidx.compose.runtime.saveable.rememberSaveable
 import android.app.Activity
-
+import kotlin.math.floor
+import kotlin.math.min
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +106,9 @@ fun AddTransactionScreen(
         OutlinedTextField(
             value = amount.toString(),
             onValueChange = {
-                amount = it.toDoubleOrNull() ?: 0.0
+                val parsed = it.toDoubleOrNull()?.times(100) ?: 0.0
+                val limited = min(parsed, 999999999.0)
+                amount = floor(limited) / 100
                 addTransactionViewModel.transactionSuccess = false
             },
             label = { Text("Amount") },

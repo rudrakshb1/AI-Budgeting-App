@@ -45,7 +45,7 @@ class BudgetViewModel(
         name: String,
         chosentype: String,
         chosencategory: String,
-        amount: Int,
+        amount: Double,
         checked: Boolean,
         startDate: String?,
         endDate: String?
