@@ -5,6 +5,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.aibudgetapp.constants.BudgetType
+import com.example.aibudgetapp.constants.DATE_FORMAT
+import com.example.aibudgetapp.constants.DATE_FORMAT_MMM_D
+import com.example.aibudgetapp.constants.DAYS_PER_WEEK
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import java.time.DayOfWeek
@@ -14,6 +18,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import kotlin.math.round
 
 class HomeViewModel(
     private val budgetRepository: BudgetRepository,
@@ -23,45 +28,60 @@ class HomeViewModel(
     var budgetError by mutableStateOf(false)
         private set
 
-    var monthlyBudgetList = mutableStateListOf<Int>()
+    var budgetErrorMessage by mutableStateOf<String?>(null)
+        private set
+
+    var monthlyBudgetList = mutableStateListOf<Double>()
         private set
 
     var transactionError by mutableStateOf(false)
         private set
 
-    var monthlyListTransaction = mutableStateListOf<Double>()
+    var transactionErrorMessage by mutableStateOf<String?>(null)
+        private set
+
+    var monthlyTransactionList = mutableStateListOf<Double>()
         private set
 
     var monthLabels = mutableStateListOf<String>()
         private set
 
-    var weeklyBudgetList = mutableStateListOf<Int>()
+    var weeklyBudgetList = mutableStateListOf<Double>()
         private set
 
-    var weeklyListTransaction = mutableStateListOf<Double>()
+    var weeklyTransactionList = mutableStateListOf<Double>()
         private set
 
     var weekLabels = mutableStateListOf<String>()
         private set
 
-    fun getMonthlyBudgetList() {
-        val parseFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    /**
+     * Build the last [historyLength] months of budget totals.
+     * Rule: allocate each budget proportionally to a month by overlap days.
+     * - MONTHLY budgets: (amount * overlapDays / daysInMonth)
+     * - WEEKLY budgets : (amount * overlapDays / 7)
+     */
+    fun getMonthlyBudgetList(
+        historyLength : Int = 12
+    ) {
+        val parseFmt = DateTimeFormatter.ofPattern(DATE_FORMAT)
         monthlyBudgetList.clear()
         budgetError = false
 
         budgetRepository.getBudgets(
             onSuccess = { list ->
-                val monthlyBudgets = list.filter { it.chosenType.equals("monthly", ignoreCase = true) }
-                val weeklyBudgets  = list.filter { it.chosenType.equals("weekly",  ignoreCase = true) }
+                val monthlyBudgets = list.filter { it.chosenType.equals(BudgetType.MONTHLY.value, ignoreCase = true) }
+                val weeklyBudgets  = list.filter { it.chosenType.equals(BudgetType.WEEKLY.value,  ignoreCase = true) }
 
-                for (i in 0 until 12) {
+                for (i in 0 until historyLength) {
                     val yearMonth   = YearMonth.now().minusMonths(i.toLong())
                     val startDate   = yearMonth.atDay(1)
                     val endDate     = yearMonth.atEndOfMonth()
-                    val daysInMonth = (ChronoUnit.DAYS.between(startDate, endDate) + 1).toInt()
+                    val daysInMonth = yearMonth.lengthOfMonth()
 
                     var sum = 0.0
 
+                    // Allocate each MONTHLY budget into this month by overlapping days.
                     monthlyBudgets.forEach { budget ->
                         val bStart = LocalDate.parse(budget.startDate, parseFmt)
                         val bEnd   = LocalDate.parse(budget.endDate,   parseFmt)
@@ -72,25 +92,32 @@ class HomeViewModel(
                         }
                     }
 
+                    // Allocate each WEEKLY budget into this month by overlapping days.
                     weeklyBudgets.forEach { budget ->
                         val bStart = LocalDate.parse(budget.startDate, parseFmt)
                         val bEnd   = LocalDate.parse(budget.endDate,   parseFmt)
 
                         val overlapDays = overlapDaysInclusive(bStart, bEnd, startDate, endDate)
                         if (overlapDays > 0) {
-                            sum += budget.amount.toDouble() * overlapDays / 7.0
+                            sum += budget.amount.toDouble() * overlapDays / DAYS_PER_WEEK
                         }
                     }
 
-                    monthlyBudgetList.add(0, sum.toInt())
+                    // Keep 2-decimal precision for chart display
+                    monthlyBudgetList.add(0, round(sum*100)/100)
                 }
             },
-            onFailure = {
+            onFailure = { e ->
                 budgetError = true
+                budgetErrorMessage = e.message ?: "Unknown error while fetching budgets"
             }
         )
     }
 
+    /**
+     * Inclusive overlap between (s1..e1) and (s2..e2).
+     * NOTE: +1 day so both boundaries count (e.g., 1-day budget still contributes).
+     */
     private fun overlapDaysInclusive(
         s1: LocalDate, e1: LocalDate,
         s2: LocalDate, e2: LocalDate
@@ -102,12 +129,14 @@ class HomeViewModel(
     }
 
 
-    fun get12MonthlyTransaction() {
+    fun get12MonthlyTransaction(
+        historyLength : Int = 12
+    ) {
         transactionError = false
-        monthlyListTransaction.clear()
+        monthlyTransactionList.clear()
         monthLabels.clear()
 
-        for (i in 0 until 12) {
+        for (i in 0 until historyLength) {
             val yearMonth = YearMonth.now().minusMonths(i.toLong())
             monthLabels.add(0, yearMonth.month.toString().take(3))
             transactionRepository.getTransactions(
@@ -117,26 +146,29 @@ class HomeViewModel(
                         .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
 
 
-                    monthlyListTransaction.add(0, sum)
+                    monthlyTransactionList.add(0, round(sum*100)/100)
                 },
                 onFailure = { e ->
                     transactionError = true
+                    transactionErrorMessage = e.message ?: "Unknown error while fetching transactions"
                 }
             )
         }
     }
 
-    fun getWeeklyBudgetList() {
-        val parseFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    fun getWeeklyBudgetList(
+        historyLength : Int = 12
+    ) {
+        val parseFmt = DateTimeFormatter.ofPattern(DATE_FORMAT)
         weeklyBudgetList.clear()
         budgetError = false
 
         budgetRepository.getBudgets(
             onSuccess = { list ->
-                val weeklyBudgets  = list.filter { it.chosenType.equals("weekly",  ignoreCase = true) }
-                val monthlyBudgets = list.filter { it.chosenType.equals("monthly", ignoreCase = true) }
+                val weeklyBudgets  = list.filter { it.chosenType.equals(BudgetType.WEEKLY.value,  ignoreCase = true) }
+                val monthlyBudgets = list.filter { it.chosenType.equals(BudgetType.MONTHLY.value, ignoreCase = true) }
 
-                for (i in 0 until 12) {
+                for (i in 0 until historyLength) {
                     val anchor = LocalDate.now().minusWeeks(i.toLong())
                     val weekStart = anchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                     val weekEnd   = weekStart.plusDays(6)
@@ -148,7 +180,7 @@ class HomeViewModel(
                         val e = LocalDate.parse(b.endDate,   parseFmt)
                         val overlapDays = overlapDaysInclusive(weekStart, weekEnd, s, e)
                         if (overlapDays > 0) {
-                            sum += b.amount.toDouble() * overlapDays / 7.0
+                            sum += b.amount.toDouble() * overlapDays / DAYS_PER_WEEK
                         }
                     }
 
@@ -158,17 +190,18 @@ class HomeViewModel(
                         sum += monthlyPortionForWeek(b.amount, s, e, weekStart, weekEnd)
                     }
 
-                    weeklyBudgetList.add(0, sum.toInt())
+                    weeklyBudgetList.add(0, round(sum*100)/100)
                 }
             },
-            onFailure = {
+            onFailure = { e ->
                 budgetError = true
+                budgetErrorMessage = e.message ?: "Unknown error while fetching budgets"
             }
         )
     }
 
     private fun monthlyPortionForWeek(
-        amount: Int,
+        amount: Double,
         budgetStart: LocalDate,
         budgetEnd: LocalDate,
         weekStart: LocalDate,
@@ -188,15 +221,17 @@ class HomeViewModel(
         return acc
     }
 
-    fun get12WeeklyTransaction() {
+    fun get12WeeklyTransaction(
+        historyLength: Int = 12
+    ) {
         transactionError = false
-        weeklyListTransaction.clear()
+        weeklyTransactionList.clear()
         weekLabels.clear()
 
-        val parseFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val labelFmtM = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH) // e.g., "Sep 2"
+        val parseFmt = DateTimeFormatter.ofPattern(DATE_FORMAT)
+        val labelFmtM = DateTimeFormatter.ofPattern(DATE_FORMAT_MMM_D, Locale.ENGLISH) // e.g., "Sep 2"
 
-        for (i in 0 until 12) {
+        for (i in 0 until historyLength) {
             val anchor = LocalDate.now().minusWeeks(i.toLong())
             val weekStart = anchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             val weekEnd = weekStart.plusDays(6)
@@ -219,10 +254,11 @@ class HomeViewModel(
                         .sumOf { (it.amount ?: 0.0) + (it.debit ?: 0.0) }
 
 
-                    weeklyListTransaction.add(0, sum)
+                    weeklyTransactionList.add(0, round(sum*100)/100)
                 },
-                onFailure = { _ ->
+                onFailure = { e ->
                     transactionError = true
+                    transactionErrorMessage = e.message ?: "Unknown error while fetching transactions"
                 }
             )
         }

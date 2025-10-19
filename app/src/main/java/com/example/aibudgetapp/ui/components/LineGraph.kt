@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.toArgb
 fun LineChart(
     values: List<Double>,
     xLabels: List<String>,
-    compareValues: List<Int>? = null,
+    compareValues: List<Double>? = null,
     title: String? = null,
     trackLineColor: Int = Color.rgb(59,130,246), // main
     compareLineColor: Int = Color.RED,          // compare

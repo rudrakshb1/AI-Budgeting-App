@@ -32,14 +32,9 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.compose.runtime.*
 import android.content.pm.PackageManager
 import com.example.aibudgetapp.notifications.ThresholdNotifier
-
-
-
-
-
+import kotlin.math.round
 
 @Composable
 private fun EnsureNotifPermission() {
@@ -60,9 +55,6 @@ private fun EnsureNotifPermission() {
         }
     }
 }
-// chart → real-money scale for alerts (20 on chart == 200 real)
-//private const val BUDGET_SERIES_SCALE_FOR_ALERTS = 10.0
-
 
 @Composable
 fun HomeScreen(
@@ -81,23 +73,25 @@ fun HomeScreen(
         homeViewModel.get12WeeklyTransaction()
     }
 
-    val monthlyBudget = homeViewModel.monthlyBudgetList.lastOrNull() ?: 0
+    val budgetError = homeViewModel.budgetError
+    val budgetErrorMessage = homeViewModel.budgetErrorMessage
+    val transactionError = homeViewModel.transactionError
+    val transactionErrorMessage = homeViewModel.transactionErrorMessage
+    val monthlyBudget = homeViewModel.monthlyBudgetList.lastOrNull() ?: 0.0
     val monthlyBudgetList = homeViewModel.monthlyBudgetList
-    val monthlySpent = homeViewModel.monthlyListTransaction.lastOrNull() ?: 0.0
-    val monthly12Spent = homeViewModel.monthlyListTransaction
+    val monthlySpent = homeViewModel.monthlyTransactionList.lastOrNull() ?: 0.0
+    val monthly12Spent = homeViewModel.monthlyTransactionList
     val monthLabels = homeViewModel.monthLabels
-
-    val weeklyBudget = homeViewModel.weeklyBudgetList.lastOrNull() ?: 0
+    val weeklyBudget = homeViewModel.weeklyBudgetList.lastOrNull() ?: 0.0
     val weeklyBudgetList = homeViewModel.weeklyBudgetList
-    val weeklySpent = homeViewModel.weeklyListTransaction.lastOrNull() ?: 0.0
-    val weekly12Spent = homeViewModel.weeklyListTransaction
+    val weeklySpent = homeViewModel.weeklyTransactionList.lastOrNull() ?: 0.0
+    val weekly12Spent = homeViewModel.weeklyTransactionList
     val weekLabels = homeViewModel.weekLabels
     val context = LocalContext.current
     val now = LocalDate.now()
     val monthId = now.format(DateTimeFormatter.ofPattern("yyyy-MM"))
     val wf = WeekFields.ISO
     val weekId = "${now.get(wf.weekBasedYear())}-W${now.get(wf.weekOfWeekBasedYear())}"
-
 
     // fire threshold checks when values change
     LaunchedEffect(monthlyBudget, monthlySpent, weeklyBudget, weeklySpent) {
@@ -115,31 +109,12 @@ fun HomeScreen(
         )
     }
 
-    //  TEMPORARY TEST BLOCK
-   // LaunchedEffect("force-threshold-test") {
-    //    ThresholdNotifier.resetThresholdState(context) // resets latch to fire again
-    //    ThresholdNotifier.maybeNotifyCrossing(
-    //        context = context,
-    //        label = "Monthly",
-     //       periodId = monthId,
-     //       spent = 190.0,   // fake test to cross 90%
-      //      budget = 20.0,   // raw 20 x scale (10) = 200 → 190/200 = 95%
-      //      scale = BUDGET_SERIES_SCALE_FOR_ALERTS
-      //  )
-   // }
-
-
-
-
     var badgeCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         // refresh when entering Home; opening Notifications screen will mark as read
         badgeCount = NotificationLog.getUnreadCount(context)
     }
-
-
-
 
     AIBudgetAppTheme {
         Scaffold(
@@ -168,61 +143,85 @@ fun HomeScreen(
                         onBellClick = onBellClick
                     )
                 }
-
-
-                item {
-                    Text("📊 Monthly Overview",
-                        modifier = Modifier.padding(vertical = 16.dp),
-                        style = MaterialTheme.typography.titleMedium)
-                    val monthlyRemaining = monthlyBudget - monthlySpent
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("Total Budget: $$monthlyBudget")
-                            Text("Total Spent: $$monthlySpent")
-                            Text("Remaining: $$monthlyRemaining")
-                        }
+                if (budgetError || transactionError) {
+                    val errorText = when {
+                        budgetError && transactionError ->
+                            (budgetErrorMessage ?: "Failed to load budgets.") + "\n" +
+                                    (transactionErrorMessage ?: "Failed to load transactions.")
+                        budgetError -> budgetErrorMessage ?: "Failed to load budgets."
+                        else -> transactionErrorMessage ?: "Failed to load transactions."
                     }
-                    Spacer(Modifier.height(12.dp))
-                }
-                item {
-                    LineChart(
-                        values = monthly12Spent,
-                        compareValues = monthlyBudgetList,
-                        xLabels = monthLabels,
-                        title = "Monthly Spendings",
-                    )
-                    Spacer(Modifier.height(24.dp))
-                }
-
-                item {
-                    Text("📊 Weekly Overview", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(12.dp))
-                    val weeklyRemaining = weeklyBudget - weeklySpent
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("Total Budget: $$weeklyBudget")
-                            Text("Total Spent: $$weeklySpent")
-                            Text("Remaining: $$weeklyRemaining")
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Text(
+                                text = errorText,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         }
+                        Spacer(Modifier.height(12.dp))
                     }
-                    Spacer(Modifier.height(12.dp))
                 }
-                item {
-                    LineChart(
-                        values = weekly12Spent,
-                        compareValues = weeklyBudgetList,
-                        xLabels = weekLabels,
-                        title = "Weekly Spendings"
-                    )
-                    Spacer(Modifier.height(48.dp))
+                else {
+                    item {
+                        Text("📊 Monthly Overview",
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            style = MaterialTheme.typography.titleMedium)
+                        val monthlyRemaining = round((monthlyBudget - monthlySpent) * 100) / 100
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text("Total Budget: $$monthlyBudget")
+                                Text("Total Spent: $$monthlySpent")
+                                Text("Remaining: $$monthlyRemaining")
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    item {
+                        LineChart(
+                            values = monthly12Spent,
+                            compareValues = monthlyBudgetList,
+                            xLabels = monthLabels,
+                            title = "Monthly Spendings",
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+
+                    item {
+                        Text("📊 Weekly Overview", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(12.dp))
+                        val weeklyRemaining = round((weeklyBudget - weeklySpent) * 100) / 100
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text("Total Budget: $$weeklyBudget")
+                                Text("Total Spent: $$weeklySpent")
+                                Text("Remaining: $$weeklyRemaining")
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    item {
+                        LineChart(
+                            values = weekly12Spent,
+                            compareValues = weeklyBudgetList,
+                            xLabels = weekLabels,
+                            title = "Weekly Spendings"
+                        )
+                        Spacer(Modifier.height(48.dp))
+                    }
                 }
             }
             Box(
@@ -276,12 +275,3 @@ fun Greeting(
         }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun HomePreview() {
-//    HomeScreen(
-//        userName = ".",
-//        screenContainerViewModel = remember { ScreenContainerViewModel() },
-//    )
-//}
