@@ -55,6 +55,12 @@ class HomeViewModel(
     var weekLabels = mutableStateListOf<String>()
         private set
 
+    /**
+     * Build the last [historyLength] months of budget totals.
+     * Rule: allocate each budget proportionally to a month by overlap days.
+     * - MONTHLY budgets: (amount * overlapDays / daysInMonth)
+     * - WEEKLY budgets : (amount * overlapDays / 7)
+     */
     fun getMonthlyBudgetList(
         historyLength : Int = 12
     ) {
@@ -75,6 +81,7 @@ class HomeViewModel(
 
                     var sum = 0.0
 
+                    // Allocate each MONTHLY budget into this month by overlapping days.
                     monthlyBudgets.forEach { budget ->
                         val bStart = LocalDate.parse(budget.startDate, parseFmt)
                         val bEnd   = LocalDate.parse(budget.endDate,   parseFmt)
@@ -85,6 +92,7 @@ class HomeViewModel(
                         }
                     }
 
+                    // Allocate each WEEKLY budget into this month by overlapping days.
                     weeklyBudgets.forEach { budget ->
                         val bStart = LocalDate.parse(budget.startDate, parseFmt)
                         val bEnd   = LocalDate.parse(budget.endDate,   parseFmt)
@@ -95,6 +103,7 @@ class HomeViewModel(
                         }
                     }
 
+                    // Keep 2-decimal precision for chart display
                     monthlyBudgetList.add(0, round(sum*100)/100)
                 }
             },
@@ -105,6 +114,10 @@ class HomeViewModel(
         )
     }
 
+    /**
+     * Inclusive overlap between (s1..e1) and (s2..e2).
+     * NOTE: +1 day so both boundaries count (e.g., 1-day budget still contributes).
+     */
     private fun overlapDaysInclusive(
         s1: LocalDate, e1: LocalDate,
         s2: LocalDate, e2: LocalDate
