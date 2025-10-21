@@ -125,30 +125,42 @@ class BudgetViewModel(
     }
 
 
+
     fun getBudgetPieChartData(
         budget: Budget,
         transactions: List<Transaction>
     ): List<Pair<String, Float>> {
-        val filtered = transactions.filter {
-            it.category == budget.chosenCategory &&
-                    !budget.startDate.isNullOrBlank() && !budget.endDate.isNullOrBlank() &&
-                    LocalDate.parse(it.date) >= LocalDate.parse(budget.startDate) &&
-                    LocalDate.parse(it.date) <= LocalDate.parse(budget.endDate)
+        if (budget.startDate.isNullOrBlank() || budget.endDate.isNullOrBlank()) {
+            return listOf("Spent" to 0f, "Remaining" to budget.amount.toFloat())
         }
+
+        val start = LocalDate.parse(budget.startDate)
+        val end = LocalDate.parse(budget.endDate)
+
+        // common date filter
+        val inRange = transactions.filter { t ->
+            val d = LocalDate.parse(t.date)
+            d >= start && d <= end
+        }
+
+        val filtered = if (budget.chosenType.equals("Yearly", ignoreCase = true)) {
+            inRange                                // ← all txns for Yearly
+        } else {
+            inRange.filter { it.category == budget.chosenCategory } // ← existing behavior
+        }
+
         val spent = filtered.sumOf { it.amount ?: 0.0 }
         val remaining = (budget.amount - spent).coerceAtLeast(0.0)
+
         return if (spent > budget.amount) {
-            listOf(
-                "Budget" to budget.amount.toFloat(),
-                "Overspent" to (spent - budget.amount).toFloat()
-            )
+            listOf("Budget" to budget.amount.toFloat(),
+                "Overspent" to (spent - budget.amount).toFloat())
         } else {
-            listOf(
-                "Spent" to spent.toFloat(),
-                "Remaining" to remaining.toFloat()
-            )
+            listOf("Spent" to spent.toFloat(),
+                "Remaining" to remaining.toFloat())
         }
     }
+
 
     class Factory(
         private val repository: BudgetRepository
