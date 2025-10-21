@@ -36,12 +36,22 @@ fun BudgetScreen(
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
     var isManualCategory by remember { mutableStateOf(false) }
 
-    //Auto-calculate end date whenever start/type changes
+    // Auto-calculate end date whenever start/type changes
     val endDate = if (recursion != 0) {
         val start = LocalDate.parse(startDate)
         if (chosenType.equals("Weekly", ignoreCase = true)) {
-            start.plusDays((7L * recursion) - 1).toString()
+            // unchanged
+            start.plusDays(7L * recursion - 1).toString()
+        } else if (chosenType.equals("Yearly", ignoreCase = true)) {
+            // NEW: yearly uses years instead of months (same “minus 1 day if same-day” rule)
+            val endRaw = start.plusYears(recursion.toLong())
+            if (endRaw.dayOfMonth == start.dayOfMonth) {
+                endRaw.minusDays(1).toString()
+            } else {
+                endRaw.toString()
+            }
         } else {
+            // unchanged: Monthly (or other non-weekly types you treat as monthly)
             val endRaw = start.plusMonths(recursion.toLong())
             if (endRaw.dayOfMonth == start.dayOfMonth) {
                 endRaw.minusDays(1).toString()
@@ -52,6 +62,7 @@ fun BudgetScreen(
     } else {
         startDate
     }
+
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -234,7 +245,7 @@ fun BudgetScreen(
             )
         }
 
-        // Save button
+
         // Save button
         Button(
             onClick = {
