@@ -36,8 +36,7 @@ fun BudgetScreen(
     var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
     var isManualCategory by remember { mutableStateOf(false) }
 
-
-    // --- Auto-calculate end date whenever start/type changes ---
+    //Auto-calculate end date whenever start/type changes
     val endDate = if (recursion != 0) {
         val start = LocalDate.parse(startDate)
         if (chosenType.equals("Weekly", ignoreCase = true)) {
@@ -85,7 +84,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(20.dp))
 
-        // --- Editable START date
+        //Editable START date
         OutlinedTextField(
             value = startDate,
             onValueChange = { startDate = it },
@@ -94,7 +93,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- Editable Recursive
+        //Editable Recursive
         OutlinedTextField(
             value = recursion.toString(),
             onValueChange = {
@@ -106,7 +105,7 @@ fun BudgetScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- System-calculated END date
+        //System-calculated END date
         OutlinedTextField(
             value = endDate,
             onValueChange = {},
@@ -138,6 +137,12 @@ fun BudgetScreen(
                         onClick = {
                             chosenType = text
                             isTypeExpanded = false
+                            // CHANGE: when switching to Yearly, close & clear category UI state
+                            if (text == "Yearly") {
+                                isCategoryExpanded = false
+                                isManualCategory = false
+                                // (optional) keep chosenCategory as-is; it won't be used for Yearly
+                            }
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -147,44 +152,55 @@ fun BudgetScreen(
 
         Text(text = "Currently selected: $chosenType")
 
-        // Category Dropdown
-        ExposedDropdownMenuBox(
-            expanded = isCategoryExpanded,
-            onExpandedChange = { isCategoryExpanded = !isCategoryExpanded },
-        ) {
-            TextField(
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
-                value = chosenCategory,
-                onValueChange = { budgetViewModel.budgetSuccess = false },
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
-            )
-            ExposedDropdownMenu(
+
+        // Category controls
+        if (chosenType != "Yearly") {
+            // CHANGE: show category picker ONLY for Weekly/Monthly
+            ExposedDropdownMenuBox(
                 expanded = isCategoryExpanded,
-                onDismissRequest = { isCategoryExpanded = false }
+                onExpandedChange = { isCategoryExpanded = !isCategoryExpanded },
             ) {
-                categories.forEach { text ->
-                    DropdownMenuItem(
-                        text = { Text(text = text) },
-                        onClick = {
-                            chosenCategory = text
-                            isCategoryExpanded = false
-                            isManualCategory = text == "Other"
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                TextField(
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    value = chosenCategory,
+                    onValueChange = { budgetViewModel.budgetSuccess = false },
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryExpanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = isCategoryExpanded,
+                    onDismissRequest = { isCategoryExpanded = false }
+                ) {
+                    categories.forEach { text ->
+                        DropdownMenuItem(
+                            text = { Text(text = text) },
+                            onClick = {
+                                chosenCategory = text
+                                isCategoryExpanded = false
+                                isManualCategory = text == "Other"
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
-        }
 
-        Text(text = "Currently selected: $chosenCategory")
+            Text(text = "Currently selected: $chosenCategory")
 
-        if(isManualCategory){
-            OutlinedTextField(
-                value = chosenCategory,
-                onValueChange = { chosenCategory = it },
-                label = { Text("Manual Category") },
-                modifier = Modifier.fillMaxWidth(),
+            if (isManualCategory) {
+                OutlinedTextField(
+                    value = chosenCategory,
+                    onValueChange = { chosenCategory = it },
+                    label = { Text("Manual Category") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        } else {
+            // CHANGE: simple hint for Yearly
+            Text(
+                text = "Yearly goals don’t use categories. All transactions are included.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
         }
 
@@ -219,12 +235,17 @@ fun BudgetScreen(
         }
 
         // Save button
+        // Save button
         Button(
             onClick = {
+                // Yearly should not pass a category
+                val categoryForSave: String? =
+                    if (chosenType == "Yearly") null else chosenCategory
+
                 budgetViewModel.onAddBudget(
                     name,
                     chosenType,
-                    chosenCategory,
+                    categoryForSave ?: "",   // <-- if function requires String; safe fallback
                     amount,
                     checked,
                     startDate,
@@ -237,6 +258,7 @@ fun BudgetScreen(
         ) {
             Text("Save")
         }
+
 
         // Error or Success messages
         if (budgetError) {

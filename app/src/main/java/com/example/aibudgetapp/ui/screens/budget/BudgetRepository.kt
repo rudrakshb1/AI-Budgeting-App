@@ -18,31 +18,37 @@ class BudgetRepository {
 
     fun addBudget(budget: Budget, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         Log.d("REPOSITORY", "Firestore push: $budget")
+
+
+        val sanitized = if (budget.chosenType.equals("Yearly", true)) {
+            budget.copy(chosenCategory = null)
+        } else budget
+
+
         val map = hashMapOf(
-            "id" to budget.id,
-            "name" to budget.name,
-            // "selecteddate" to budget.selectedDate,
-            "chosentype" to budget.chosenType,
-            "chosencategory" to budget.chosenCategory,
-            "amount" to budget.amount,
-            "checked" to budget.checked,
-            "startDate" to (budget.startDate ?: ""),
-            "endDate" to (budget.endDate ?: "")
+            "id" to sanitized.id,
+            "name" to sanitized.name,
+            "chosentype" to sanitized.chosenType,
+            "amount" to sanitized.amount,
+            "checked" to sanitized.checked,
+            "startDate" to (sanitized.startDate ?: ""),
+            "endDate" to (sanitized.endDate ?: "")
         )
+        sanitized.chosenCategory?.let { map["chosencategory"] = it }
+
         userBudgetsRef()
             .add(map)
             .addOnSuccessListener { ref ->
                 val newId = ref.id
                 ref.update("id", newId)
                     .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener(onFailure) }
+                    .addOnFailureListener(onFailure)
+            }
             .addOnFailureListener { e -> onFailure(e) }
     }
 
-    fun getBudgets(
-        onSuccess: (List<Budget>) -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
+
+    fun getBudgets(onSuccess: (List<Budget>) -> Unit, onFailure: (Exception) -> Unit) {
         try {
             userBudgetsRef()
                 .get()
@@ -52,9 +58,9 @@ class BudgetRepository {
                         Budget(
                             id = (data["id"] as? String) ?: doc.id,
                             name = data["name"] as? String ?: "",
-                            // selectedDate = (data["selecteddate"] as? Number)?.toInt() ?: 0,
                             chosenType = data["chosentype"] as? String ?: "",
-                            chosenCategory = data["chosencategory"] as? String ?: "",
+                            // CHANGE: nullable + normalize blanks to null
+                            chosenCategory = (data["chosencategory"] as? String)?.ifBlank { null },
                             amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
                             checked = data["checked"] as? Boolean ?: false,
                             startDate = data["startDate"] as? String,
@@ -62,7 +68,6 @@ class BudgetRepository {
                         )
                     }
                     Log.d("REPO", "getBudgets: found ${list.size} budgets")
-
                     onSuccess(list)
                 }
                 .addOnFailureListener(onFailure)
@@ -70,6 +75,7 @@ class BudgetRepository {
             onFailure(e)
         }
     }
+
 
     fun deleteBudget(
         id: String,
@@ -88,38 +94,37 @@ class BudgetRepository {
     }
     fun getbudgetcategory(
         category: String,
-    onSuccess: (List<Budget>) -> Unit,
+        onSuccess: (List<Budget>) -> Unit,
         onFailure: (Exception) -> Unit
-    ){
+    ) {
         try {
-
             userBudgetsRef()
-            .whereEqualTo("chosencategory", category)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val results = snapshot.documents.map { res ->
-                    val cate = res.data ?: emptyMap<String, Any?>()
-                    Budget(
-                        id = (cate["id"] as? String) ?: res.id,
-                        name = cate["name"] as? String ?: "",
-                        chosenType = cate["chosentype"] as? String ?: "",
-                        chosenCategory = cate["chosencategory"] as? String ?: "",
-                        amount = (cate["amount"] as? Number)?.toDouble() ?: 0.0,
-                        checked = cate["checked"] as? Boolean ?: false,
-                        startDate = cate["startDate"] as? String,
-                        endDate = cate["endDate"] as? String
-                    )
+                .whereEqualTo("chosencategory", category)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val results = snapshot.documents.map { res ->
+                        val cate = res.data ?: emptyMap<String, Any?>()
+                        Budget(
+                            id = (cate["id"] as? String) ?: res.id,
+                            name = cate["name"] as? String ?: "",
+                            chosenType = cate["chosentype"] as? String ?: "",
+                            // CHANGE: nullable + normalize blanks to null
+                            chosenCategory = (cate["chosencategory"] as? String)?.ifBlank { null },
+                            amount = (cate["amount"] as? Number)?.toDouble() ?: 0.0,
+                            checked = cate["checked"] as? Boolean ?: false,
+                            startDate = cate["startDate"] as? String,
+                            endDate = cate["endDate"] as? String
+                        )
+                    }
+                    Log.d("REPO", "getBudgets: found ${results.size} budgets")
+                    onSuccess(results)
                 }
-                Log.d("REPO", "getBudgets: found ${results.size} budgets")
-
-
-                onSuccess(results)
-            }
-            .addOnFailureListener(onFailure)
-    } catch (e: IllegalStateException) {
-        onFailure(e)
+                .addOnFailureListener(onFailure)
+        } catch (e: IllegalStateException) {
+            onFailure(e)
+        }
     }
-}
+
 
 
 

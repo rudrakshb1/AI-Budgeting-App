@@ -50,22 +50,41 @@ class BudgetViewModel(
         startDate: String?,
         endDate: String?
     ) {
+        //Basic validation
         if (amount <= 0 || name.isBlank()) {
             budgetError = true
-        } else {
-            val budget = Budget(
-                id = "",
-                name = name,
-                chosenType = chosentype,
-                chosenCategory = chosencategory,
-                amount = amount,
-                checked = checked,
-                startDate = startDate,
-                endDate = endDate
-            )
-            addBudget(budget)
+            budgetSuccess = false
+            return
         }
+
+        //Category validation — only for Weekly/Monthly
+        if (!chosentype.equals("Yearly", ignoreCase = true) && chosencategory.isBlank()) {
+            errorMessage = "Please select a category."
+            budgetError = true
+            budgetSuccess = false
+            return
+        }
+
+        //Normalize category for Yearly
+        val catOrNull: String? =
+            if (chosentype.equals("Yearly", ignoreCase = true)) null
+            else chosencategory.ifBlank { null }
+
+        //Create and save budget
+        val budget = Budget(
+            id = "",
+            name = name,
+            chosenType = chosentype,
+            chosenCategory = catOrNull,
+            amount = amount,
+            checked = checked,
+            startDate = startDate,
+            endDate = endDate
+        )
+
+        addBudget(budget)
     }
+
 
     fun fetchBudgets() {
         isLoading = true
@@ -92,11 +111,19 @@ class BudgetViewModel(
         )
     }
 
+
     fun filterBudgetByCategory(category: String) {
         filteredBudget = budgets
-            .filter { it.chosenCategory.contains(category, true) }
+            .filter { b ->
+                if (category.isBlank()) {
+                    true
+                } else {
+                    b.chosenCategory?.contains(category, ignoreCase = true) == true
+                }
+            }
             .sortedBy { it.name }
     }
+
 
     fun getBudgetPieChartData(
         budget: Budget,
