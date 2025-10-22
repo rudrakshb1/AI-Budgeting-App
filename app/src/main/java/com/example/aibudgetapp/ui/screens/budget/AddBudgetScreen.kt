@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -20,6 +22,7 @@ fun BudgetScreen(
 ) {
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
+    val errorMessage by remember { derivedStateOf { budgetViewModel.errorMessage } }
     val budgetSuccess by remember { derivedStateOf { budgetViewModel.budgetSuccess } }
 
     // form states
@@ -38,30 +41,40 @@ fun BudgetScreen(
 
     // Auto-calculate end date whenever start/type changes
     val endDate = if (recursion != 0) {
-        val start = LocalDate.parse(startDate)
-        if (chosenType.equals("Weekly", ignoreCase = true)) {
-            // unchanged
-            start.plusDays(7L * recursion - 1).toString()
-        } else if (chosenType.equals("Yearly", ignoreCase = true)) {
-            // NEW: yearly uses years instead of months (same “minus 1 day if same-day” rule)
-            val endRaw = start.plusYears(recursion.toLong())
-            if (endRaw.dayOfMonth == start.dayOfMonth) {
-                endRaw.minusDays(1).toString()
+        val start: LocalDate? = try {
+            LocalDate.parse(startDate.trim(), DateTimeFormatter.ofPattern("yyyy-M-d"))
+        } catch(e: Exception) {
+            null
+        }
+
+        if (start != null) {
+            if (chosenType.equals("Weekly", ignoreCase = true)) {
+                // unchanged
+                start.plusDays(7L * recursion - 1).toString()
+            } else if (chosenType.equals("Yearly", ignoreCase = true)) {
+                // NEW: yearly uses years instead of months (same “minus 1 day if same-day” rule)
+                val endRaw = start.plusYears(recursion.toLong())
+                if (endRaw.dayOfMonth == start.dayOfMonth) {
+                    endRaw.minusDays(1).toString()
+                } else {
+                    endRaw.toString()
+                }
             } else {
-                endRaw.toString()
+                // unchanged: Monthly (or other non-weekly types you treat as monthly)
+                val endRaw = start.plusMonths(recursion.toLong())
+                if (endRaw.dayOfMonth == start.dayOfMonth) {
+                    endRaw.minusDays(1).toString()
+                } else {
+                    endRaw.toString()
+                }
             }
         } else {
-            // unchanged: Monthly (or other non-weekly types you treat as monthly)
-            val endRaw = start.plusMonths(recursion.toLong())
-            if (endRaw.dayOfMonth == start.dayOfMonth) {
-                endRaw.minusDays(1).toString()
-            } else {
-                endRaw.toString()
-            }
+            "Invalid date"
         }
     } else {
         startDate
     }
+
 
 
     Column(
@@ -274,7 +287,7 @@ fun BudgetScreen(
         // Error or Success messages
         if (budgetError) {
             Text(
-                "Budget Creation failed. \nPlease check for any incorrect values",
+                text = errorMessage ?: "Budget Creation failed.\nPlease check for any incorrect values",
                 color = Color.Red,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(8.dp),

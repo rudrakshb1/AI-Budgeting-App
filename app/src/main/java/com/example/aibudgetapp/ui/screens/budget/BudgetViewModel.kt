@@ -51,7 +51,19 @@ class BudgetViewModel(
         endDate: String?
     ) {
         //Basic validation
+        budgetError = false
+        budgetSuccess = false
+        errorMessage = null
         if (amount <= 0 || name.isBlank()) {
+            errorMessage = "Please enter an amount greater than 0."
+            budgetError = true
+            budgetSuccess = false
+            return
+        }
+
+        //Date validation
+        if (endDate.equals("Invalid date")) {
+            errorMessage = "Please enter a valid date in the format yyyy-MM-dd (e.g., 2025-01-23)."
             budgetError = true
             budgetSuccess = false
             return
