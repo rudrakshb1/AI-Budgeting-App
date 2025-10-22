@@ -54,7 +54,7 @@ fun SpendingScreen(
         try { s?.replace("/", "-")?.let(LocalDate::parse) } catch (_: Exception) { null }
     }
 
-    // --- Budget selection dropdown ---
+    //Budget selection dropdown
     Box {
         Button(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
             Text("${selectedBudget.name} (${selectedBudget.chosenType})")
@@ -71,20 +71,42 @@ fun SpendingScreen(
 
     Spacer(Modifier.height(8.dp))
     Text(
-        "Current:\nName: ${selectedBudget.name}\nType: ${selectedBudget.chosenType}\nCategory: ${selectedBudget.chosenCategory}\nAmount: $${selectedBudget.amount}",
+        "Current:",
         style = MaterialTheme.typography.bodySmall
     )
+    Text("Name: ${selectedBudget.name}", style = MaterialTheme.typography.bodySmall)
+    Text("Type: ${selectedBudget.chosenType}", style = MaterialTheme.typography.bodySmall)
+
+
+    if (!selectedBudget.chosenType.equals("Yearly", ignoreCase = true) &&
+        !selectedBudget.chosenCategory.isNullOrBlank()
+    ) {
+        Text("Category: ${selectedBudget.chosenCategory}", style = MaterialTheme.typography.bodySmall)
+    }
+
+    Text("Amount: $${selectedBudget.amount}", style = MaterialTheme.typography.bodySmall)
     Spacer(Modifier.height(16.dp))
 
+
     // Filter transactions that match the selected budget
+
     val filteredTxns = addTransactionViewModel.transactions.filter { tx ->
         val txDate = safeParse(tx.date)
         val start = safeParse(selectedBudget.startDate)
         val end = safeParse(selectedBudget.endDate)
-        txDate != null && start != null && end != null &&
-                txDate >= start && txDate <= end &&
-                tx.category == selectedBudget.chosenCategory
+
+        val inRange = txDate != null && start != null && end != null &&
+                txDate >= start && txDate <= end
+
+        if (!inRange) {
+            false
+        } else if (selectedBudget.chosenType.equals("Yearly", ignoreCase = true)) {
+            true                     // <- ignore category for Yearly
+        } else {
+            tx.category == selectedBudget.chosenCategory
+        }
     }
+
 
     val budgetAmount = selectedBudget.amount.toDouble()
     val totalSpent = filteredTxns.sumOf { it.amount ?: 0.0 }
@@ -104,7 +126,7 @@ fun SpendingScreen(
         }
     }
 
-    // ---- Pie Chart ----
+    //Pie Chart
     AndroidView(
         factory = { context ->
             PieChart(context).apply {
@@ -135,7 +157,7 @@ fun SpendingScreen(
             }
             val entries = pieSlices.map { (label, value) -> PieEntry(value, label) }
             val dataSet = PieDataSet(entries, "").apply {
-                colors = sliceColors               // ✅ assign per slice
+                colors = sliceColors               //assign per slice
                 valueTextSize = 14f
             }
             chart.data = PieData(dataSet).apply {
@@ -155,7 +177,7 @@ fun SpendingScreen(
             .height(250.dp)
     )
 
-    // --- Show Remaining / Overspent text
+    //Show Remaining / Overspent text
     Spacer(modifier = Modifier.height(8.dp))
     when {
         totalSpent == 0.0 -> Text("No spending yet", color = MaterialTheme.colorScheme.primary)
@@ -171,7 +193,7 @@ fun SpendingScreen(
 
     val barChartXAxisLabels = fixedCategories + "Other"
 
-    // --- Group transactions globally, sum each category ---
+    //Group transactions globally, sum each category
     val transactionByCategory = addTransactionViewModel.transactions.groupBy { it.category }
 
     val displaySpending by remember(addTransactionViewModel.transactions, fixedCategories) {

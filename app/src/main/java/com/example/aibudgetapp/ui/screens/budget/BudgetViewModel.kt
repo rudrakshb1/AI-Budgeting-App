@@ -50,22 +50,53 @@ class BudgetViewModel(
         startDate: String?,
         endDate: String?
     ) {
+        //Basic validation
+        budgetError = false
+        budgetSuccess = false
+        errorMessage = null
         if (amount <= 0 || name.isBlank()) {
+            errorMessage = "Please enter an amount greater than 0."
             budgetError = true
-        } else {
-            val budget = Budget(
-                id = "",
-                name = name,
-                chosenType = chosentype,
-                chosenCategory = chosencategory,
-                amount = amount,
-                checked = checked,
-                startDate = startDate,
-                endDate = endDate
-            )
-            addBudget(budget)
+            budgetSuccess = false
+            return
         }
+
+        //Date validation
+        if (endDate.equals("Invalid date")) {
+            errorMessage = "Please enter a valid date in the format yyyy-MM-dd (e.g., 2025-01-23)."
+            budgetError = true
+            budgetSuccess = false
+            return
+        }
+
+        //Category validation — only for Weekly/Monthly
+        if (!chosentype.equals("Yearly", ignoreCase = true) && chosencategory.isBlank()) {
+            errorMessage = "Please select a category."
+            budgetError = true
+            budgetSuccess = false
+            return
+        }
+
+        //Normalize category for Yearly
+        val catOrNull: String? =
+            if (chosentype.equals("Yearly", ignoreCase = true)) null
+            else chosencategory.ifBlank { null }
+
+        //Create and save budget
+        val budget = Budget(
+            id = "",
+            name = name,
+            chosenType = chosentype,
+            chosenCategory = catOrNull,
+            amount = amount,
+            checked = checked,
+            startDate = startDate,
+            endDate = endDate
+        )
+
+        addBudget(budget)
     }
+
 
     fun fetchBudgets() {
         isLoading = true
@@ -92,36 +123,56 @@ class BudgetViewModel(
         )
     }
 
+
     fun filterBudgetByCategory(category: String) {
         filteredBudget = budgets
-            .filter { it.chosenCategory.contains(category, true) }
+            .filter { b ->
+                if (category.isBlank()) {
+                    true
+                } else {
+                    b.chosenCategory?.contains(category, ignoreCase = true) == true
+                }
+            }
             .sortedBy { it.name }
     }
+
+
 
     fun getBudgetPieChartData(
         budget: Budget,
         transactions: List<Transaction>
     ): List<Pair<String, Float>> {
-        val filtered = transactions.filter {
-            it.category == budget.chosenCategory &&
-                    !budget.startDate.isNullOrBlank() && !budget.endDate.isNullOrBlank() &&
-                    LocalDate.parse(it.date) >= LocalDate.parse(budget.startDate) &&
-                    LocalDate.parse(it.date) <= LocalDate.parse(budget.endDate)
+        if (budget.startDate.isNullOrBlank() || budget.endDate.isNullOrBlank()) {
+            return listOf("Spent" to 0f, "Remaining" to budget.amount.toFloat())
         }
+
+        val start = LocalDate.parse(budget.startDate)
+        val end = LocalDate.parse(budget.endDate)
+
+        // common date filter
+        val inRange = transactions.filter { t ->
+            val d = LocalDate.parse(t.date)
+            d >= start && d <= end
+        }
+
+        val filtered = if (budget.chosenType.equals("Yearly", ignoreCase = true)) {
+            inRange                                // ← all txns for Yearly
+        } else {
+            inRange.filter { it.category == budget.chosenCategory } // ← existing behavior
+        }
+
         val spent = filtered.sumOf { it.amount ?: 0.0 }
         val remaining = (budget.amount - spent).coerceAtLeast(0.0)
+
         return if (spent > budget.amount) {
-            listOf(
-                "Budget" to budget.amount.toFloat(),
-                "Overspent" to (spent - budget.amount).toFloat()
-            )
+            listOf("Budget" to budget.amount.toFloat(),
+                "Overspent" to (spent - budget.amount).toFloat())
         } else {
-            listOf(
-                "Spent" to spent.toFloat(),
-                "Remaining" to remaining.toFloat()
-            )
+            listOf("Spent" to spent.toFloat(),
+                "Remaining" to remaining.toFloat())
         }
     }
+
 
     class Factory(
         private val repository: BudgetRepository

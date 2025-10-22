@@ -22,9 +22,18 @@ fun BudgetItemCard(budget: Budget) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = budget.name, style = MaterialTheme.typography.titleMedium)
             Text(text = "Amount: \$${budget.amount}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Category: ${budget.chosenCategory}", style = MaterialTheme.typography.bodySmall)
+
+            // Only show category if not Yearly and not null/blank
+            if (!budget.chosenType.equals("Yearly", ignoreCase = true) &&
+                !budget.chosenCategory.isNullOrBlank()
+            ) {
+                Text(
+                    text = "Category: ${budget.chosenCategory}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             Text(text = "Type: ${budget.chosenType}", style = MaterialTheme.typography.bodySmall)
-            // Text(text = "Date: ${budget.selectedDate}", style = MaterialTheme.typography.bodySmall)
             Text(text = "From: ${budget.startDate}", style = MaterialTheme.typography.bodySmall)
             Text(text = "To: ${budget.endDate}", style = MaterialTheme.typography.bodySmall)
         }
