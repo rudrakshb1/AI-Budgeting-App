@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
 import com.example.aibudgetapp.ui.theme.LocalThemeController
 import com.example.aibudgetapp.ui.theme.ThemeMode
+import androidx.core.net.toUri
 
 
 @Composable
@@ -47,6 +48,8 @@ fun SettingsScreen(
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var avatarUriString by remember { mutableStateOf<String?>(null) }
+    val avatarUri = avatarUriString?.toUri()
 
     val themeController = LocalThemeController.current
 
@@ -115,15 +118,13 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(uiState.avatarInitials, fontSize = 16.sp)
-                        }
+                        ProfilePhoto(
+                            displayName = uiState.displayName,
+                            avatarUri = avatarUri,
+                            onPhotoPicked = { uri ->
+                                avatarUriString = uri.toString()
+                            }
+                        )
                         Spacer(Modifier.height(6.dp))
                         Text(uiState.displayName, fontSize = 14.sp)
                     }
