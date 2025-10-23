@@ -1,14 +1,13 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.aibudgetapp.ui.screens.settings
 
-import com.example.aibudgetapp.ui.screens.settings.SettingsUiState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -24,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import com.example.aibudgetapp.ui.theme.LocalThemeController
 import com.example.aibudgetapp.ui.theme.ThemeMode
 import androidx.core.net.toUri
@@ -60,7 +60,7 @@ fun SettingsScreen(
         SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
         SettingTileData("Export Data", Icons.Filled.Storage, onNavigateExport),
         SettingTileData("Uploaded Data", Icons.Filled.UploadFile, onNavigateUploads),
-        SettingTileData("FAQ", Icons.Filled.HelpOutline, onNavigateFaq),
+        SettingTileData("FAQ", Icons.AutoMirrored.Filled.HelpOutline, onNavigateFaq),
     )
 
     var showEdit by remember { mutableStateOf(false) }
@@ -68,15 +68,11 @@ fun SettingsScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
-        topBar = {
-            AppTopBar(
-                title = "AI Budgeting App",
-                onMenu = onMenu
-            )
-        },
+        topBar = { AppTopBar(onMenu = onMenu) },
         bottomBar = { bottomBar?.invoke() }
     ) { padding ->
-        Column(
+
+    Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
@@ -311,7 +307,6 @@ private data class SettingTileData(
 
 @Composable
 private fun AppTopBar(
-    title: String,
     onMenu: () -> Unit
 ) {
     Surface(
@@ -331,12 +326,13 @@ private fun AppTopBar(
             }
             Spacer(Modifier.width(8.dp))
             Text(
-                text = title,
+                text = "AI Budgeting App",
                 style = MaterialTheme.typography.titleLarge
             )
         }
     }
 }
+
 
 @Composable
 private fun SettingTile(data: SettingTileData) {
