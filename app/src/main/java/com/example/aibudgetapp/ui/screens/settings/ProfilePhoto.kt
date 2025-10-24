@@ -34,7 +34,7 @@ import androidx.core.content.FileProvider
 fun ProfilePhoto(
     displayName: String,
     avatarUri: Uri?,
-    onPhotoPicked: (Uri) -> Unit
+    onPhotoPicked: (Uri?) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -114,6 +114,13 @@ fun ProfilePhoto(
                         showUrlDialog = true
                     }) {
                         Text("🌐 Paste image URL")
+                    }
+
+                    TextButton(onClick = {
+                        onPhotoPicked(null)
+                        showOptions = false
+                    }) {
+                        Text("❌ Delete")
                     }
 
                     TextButton(onClick = { showOptions = false }) {
