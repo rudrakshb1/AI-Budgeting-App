@@ -5,12 +5,11 @@ import android.net.Uri
 import android.util.Log
 import com.example.aibudgetapp.ai.GeminiClient
 import com.example.aibudgetapp.constants.CategoryType
-import com.example.aibudgetapp.ui.screens.transaction.Transaction   // ✅ correct import
+import com.example.aibudgetapp.ui.screens.transaction.Transaction
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 fun parseCsv(context: Context, uri: Uri): List<Transaction> {
     val inputStream = context.contentResolver.openInputStream(uri)
@@ -51,10 +50,10 @@ fun parseCsv(context: Context, uri: Uri): List<Transaction> {
         if (amount > 0) return@forEachLine
         val details = if (detailsCol != -1) cols.getOrNull(detailsCol)?.trim().orEmpty() else ""
         val payee = if (payeeCol != -1) cols.getOrNull(payeeCol)?.trim().orEmpty() else ""
-        val memo = if (particularsCol != -1) cols.getOrNull(particularsCol)?.trim().orEmpty() else ""
+        val particulars = if (particularsCol != -1) cols.getOrNull(particularsCol)?.trim().orEmpty() else ""
         val code = if (codeCol != -1) cols.getOrNull(codeCol)?.trim().orEmpty() else ""
 
-        val category = listOf(payee, details, memo, code)
+        val category = listOf(payee, details, particulars, code)
             .firstNotNullOfOrNull { text ->
                 findCategory(text).takeIf { it != "Other" }
             } ?: "Other"
