@@ -2,6 +2,7 @@
 package com.example.aibudgetapp.ui.screens.settings
 
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,15 +27,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import com.example.aibudgetapp.ui.theme.LocalThemeController
 import com.example.aibudgetapp.ui.theme.ThemeMode
-import androidx.core.net.toUri
-
 
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
     bottomBar: @Composable (() -> Unit)? = null,
     onMenu: () -> Unit = {},
-    onEditProfile: () -> Unit = {},
+    onEditProfilePhoto: (Uri?) -> Unit,
     onAddUser: () -> Unit = {},
     onNavigatePasscode: () -> Unit = {},
     onNavigateReminders: () -> Unit = {},
@@ -48,8 +47,6 @@ fun SettingsScreen(
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var avatarUriString by remember { mutableStateOf<String?>(null) }
-    val avatarUri = avatarUriString?.toUri()
 
     val themeController = LocalThemeController.current
 
@@ -65,6 +62,7 @@ fun SettingsScreen(
 
     var showEdit by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf(uiState.displayName) }
+    var newPhoto by remember { mutableStateOf(uiState.photoUri) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -102,7 +100,6 @@ fun SettingsScreen(
                         onClick = {
                             newName = uiState.displayName
                             showEdit = true
-                            onEditProfile()
                         },
                         label = { Text("Edit Profile") },
                         leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
@@ -115,10 +112,11 @@ fun SettingsScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         ProfilePhoto(
-                            displayName = uiState.displayName,
-                            avatarUri = avatarUri,
+                            displayName = uiState.avatarInitials,
+                            avatarUri = newPhoto,
                             onPhotoPicked = { uri ->
-                                avatarUriString = uri.toString()
+                                newPhoto = uri
+                                onEditProfilePhoto(uri)
                             }
                         )
                         Spacer(Modifier.height(6.dp))

@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.data
 
+import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +13,7 @@ class AccountRepository(
     private val db: FirebaseFirestore
 ) {
     fun currentDisplayName(): String = auth.currentUser?.displayName.orEmpty()
+    fun currentPhotoUri(): Uri? = auth.currentUser?.photoUrl
 
     suspend fun updateDisplayName(newName: String) {
         val user = auth.currentUser ?: error("Not logged in")
@@ -22,6 +24,18 @@ class AccountRepository(
         user.updateProfile(req).await() // Auth
         db.collection("users").document(user.uid)            // Firestore mirror
             .set(mapOf("displayName" to newName), SetOptions.merge())
+            .await()
+    }
+
+    suspend fun updateProfilePhoto(photo: Uri?) {
+        val user = auth.currentUser ?: error("Not logged in")
+        val req = UserProfileChangeRequest.Builder()
+            .setPhotoUri(photo)
+            .build()
+
+        user.updateProfile(req).await() // Auth
+        db.collection("users").document(user.uid)            // Firestore mirror
+            .set(mapOf("photoUri" to photo), SetOptions.merge())
             .await()
     }
 

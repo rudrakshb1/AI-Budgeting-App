@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.ui.screens.settings
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,7 +12,8 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val displayName: String = "",
-    val avatarInitials: String = ""
+    val avatarInitials: String = "",
+    val photoUri: Uri? = null
 )
 
 class SettingsViewModel(
@@ -22,8 +24,10 @@ class SettingsViewModel(
         private set
 
     init {
-        val current = accountRepo.currentDisplayName()
-        if (current.isNotBlank()) setDisplayName(current)
+        val currentDisplayName = accountRepo.currentDisplayName()
+        val currentPhoto = accountRepo.currentPhotoUri()
+        if (currentDisplayName.isNotBlank()) setDisplayName(currentDisplayName)
+        if (currentPhoto != null) setPhoto(currentPhoto)
     }
 
     private fun setDisplayName(name: String) {
@@ -31,7 +35,11 @@ class SettingsViewModel(
         uiState = uiState.copy(displayName = name, avatarInitials = initials)
     }
 
-    fun onEditProfileConfirm(
+    private fun setPhoto(photo: Uri?) {
+        uiState = uiState.copy(photoUri = photo)
+    }
+
+    fun onEditProfileDisplayName(
         newName: String,
         onSuccess: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
@@ -43,6 +51,22 @@ class SettingsViewModel(
                 onSuccess?.invoke()
             } catch (e: Exception) {
                 onError?.invoke(e.localizedMessage ?: "Failed to update name")
+            }
+        }
+    }
+
+    fun onEditProfilePhoto(
+        newPhoto: Uri?,
+        onSuccess: (() -> Unit)? = null,
+        onError: ((String) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                accountRepo.updateProfilePhoto(newPhoto)
+                setPhoto(newPhoto)
+                onSuccess?.invoke()
+            } catch (e: Exception) {
+                onError?.invoke(e.localizedMessage ?: "Failed to update photo")
             }
         }
     }

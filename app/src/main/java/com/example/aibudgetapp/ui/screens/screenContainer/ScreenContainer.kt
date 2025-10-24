@@ -76,13 +76,16 @@ fun ScreenContainer(
                         // Repo + VM factory wiring for Settings
                         SettingsScreen(
                             uiState = settingsViewModel.uiState,
+                            onEditProfilePhoto = { newPhoto ->
+                                settingsViewModel.onEditProfilePhoto(newPhoto)
+                            },
                             onAddUser = settingsViewModel::onAddUserClick,
                             onLogout = {
                                 screenContainerViewModel.navigateTo(Screen.HOME)
                                 onLogout()
                             },
                             onConfirmEditName = { newName ->
-                                settingsViewModel.onEditProfileConfirm(newName)
+                                settingsViewModel.onEditProfileDisplayName(newName)
                             },
                             onDeleteAccount = {
                                 settingsViewModel.deleteAccount(
