@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.aibudgetapp.constants.CategoryType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -31,7 +32,7 @@ fun BudgetScreen(
     var amount by remember { mutableStateOf(0.0) }
     val type = listOf("Weekly", "Monthly", "Yearly")
     var chosenType by remember { mutableStateOf(type[0]) }
-    val categories = listOf("Food & Drink", "Rent", "Gas", "Mortgage", "Other")
+    val categories = CategoryType.entries.map { it.value }
     var chosenCategory by remember { mutableStateOf(categories[0]) }
     var isTypeExpanded by remember { mutableStateOf(false) }
     var isCategoryExpanded by remember { mutableStateOf(false) }

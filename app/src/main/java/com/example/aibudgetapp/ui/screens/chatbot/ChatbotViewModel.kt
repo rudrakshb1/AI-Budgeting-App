@@ -45,11 +45,8 @@ class ChatbotViewModel : ViewModel() {
                 val raw = GeminiClient.postText(prompt)
                 Log.d("ChatbotVM", "Gemini raw: $raw")
 
-                // Prefer parsed text; fall back to minimal status message
-                val parsed = extractText(raw)
                 val botText = when {
-                    parsed != null -> parsed
-                    raw != null      -> "✅ Connected (parse failed). Raw received"
+                    raw != null -> raw
                     else             -> "❌ Gemini call failed (no response)"
                 }
 
@@ -70,17 +67,5 @@ class ChatbotViewModel : ViewModel() {
                 }
             }
         }
-    }
-
-    /** Extracts first candidate text from Google AI Studio JSON */
-    private fun extractText(raw: String?): String? {
-        if (raw.isNullOrBlank()) return null
-        return try {
-            val root = JSONObject(raw)
-            val cand = root.optJSONArray("candidates")?.optJSONObject(0)
-            val content = cand?.optJSONObject("content")
-            val parts = content?.optJSONArray("parts")
-            parts?.optJSONObject(0)?.optString("text")?.takeIf { it.isNotBlank() }
-        } catch (_: Exception) { null }
     }
 }

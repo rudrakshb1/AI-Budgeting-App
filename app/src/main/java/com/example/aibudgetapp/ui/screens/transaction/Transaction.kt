@@ -8,6 +8,6 @@ data class Transaction(
     val credit: Double? = null,     // for bank statements
     val balance: Double? = null,    // for bank statements
     var category: String = "",      // filled by user (never Uncategorized now)
-    val date: String = "",
+    var date: String = "",
     val merchant: String = ""       // for receipts
 )
