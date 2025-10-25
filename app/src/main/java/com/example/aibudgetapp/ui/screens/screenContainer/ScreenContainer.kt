@@ -20,6 +20,9 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFac
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
 import com.example.aibudgetapp.notifications.NotificationsScreen
+import com.example.aibudgetapp.ui.screens.settings.RemindersScreen
+
+
 
 sealed class Screen {
     object HOME : Screen()
@@ -30,6 +33,7 @@ sealed class Screen {
     data class RECEIPTFLOW(val uri: Uri) : Screen()
     object CHATBOT : Screen()
     object NOTIFICATIONS : Screen()
+    object REMINDERS : Screen()
 }
 
 @Composable
@@ -80,6 +84,7 @@ fun ScreenContainer(
                                 settingsViewModel.onEditProfilePhoto(newPhoto)
                             },
                             onAddUser = settingsViewModel::onAddUserClick,
+                            onNavigateReminders = { screenContainerViewModel.navigateTo(Screen.REMINDERS) },
                             onLogout = {
                                 screenContainerViewModel.navigateTo(Screen.HOME)
                                 onLogout()
@@ -115,6 +120,10 @@ fun ScreenContainer(
 
                     Screen.NOTIFICATIONS -> NotificationsScreen(
                         onBack = { screenContainerViewModel.navigateTo(Screen.HOME) }
+                    )
+                    Screen.REMINDERS -> RemindersScreen(
+                        onBack = { screenContainerViewModel.navigateTo(Screen.SETTINGS) },
+                        onToggleChanged = { /* hook to ThresholdNotifier in next step */ }
                     )
                 }
             }

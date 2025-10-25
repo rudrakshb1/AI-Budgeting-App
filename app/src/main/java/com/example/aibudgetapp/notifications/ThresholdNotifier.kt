@@ -18,9 +18,22 @@ object ThresholdNotifier {
     private const val PREFS = "budget_threshold_prefs"
     private const val THRESHOLD = 90.0 // percent
 
+    private const val KEY_REMINDERS_ENABLED = "reminders_enabled"
+
     // Backfill state
     private const val MIGRATION_PREFS = "notif_migrations"
     private const val BACKFILLED_V1 = "notif_backfilled_v1"
+
+    fun isRemindersEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_REMINDERS_ENABLED, true)
+    }
+
+    /** Persists the reminders toggle (true = enabled). */
+    fun setRemindersEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_REMINDERS_ENABLED, enabled) }
+    }
 
     /**
      * One-time: write a history entry (NO system notification) if already ≥ THRESHOLD for this period
@@ -100,6 +113,10 @@ object ThresholdNotifier {
         scale: Double = 1.0
     ): Boolean {
         val effBudget = budget * scale
+        if (!isRemindersEnabled(context)) {
+            Log.d(TAG, "maybe: reminders OFF; skip ($label/$periodId)")
+            return false
+        }
         if (effBudget <= 0.0) {
             Log.d(TAG, "maybe: budget<=0, skip ($label/$periodId)")
             return false
@@ -165,6 +182,10 @@ object ThresholdNotifier {
         title: String,
         text: String
     ): Boolean {
+        if (!isRemindersEnabled(context)) {
+            Log.d(TAG, "post: reminders OFF; skip system banner")
+            return false
+        }
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -181,7 +202,7 @@ object ThresholdNotifier {
 
         val id = if (label == "Monthly") 2001 else 2002
         val notif = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(smallIcon)                 // ← fixed: no missing R.drawable
+            .setSmallIcon(smallIcon)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -201,7 +222,7 @@ object ThresholdNotifier {
     }
 
 
-    // --- Yearly convenience wrappers (reuse the generic threshold logic) ---
+    //Yearly convenience wrappers (reuse the generic threshold logic)
     fun backfillYearlyIfNeeded(
         context: Context,
         yearId: String,   // e.g. "2025"
