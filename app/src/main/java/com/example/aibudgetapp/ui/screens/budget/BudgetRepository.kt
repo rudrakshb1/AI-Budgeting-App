@@ -3,7 +3,7 @@ package com.example.aibudgetapp.ui.screens.budget
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.firestore
 
@@ -11,19 +11,74 @@ class BudgetRepository {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
-    private fun userBudgetsRef() = db
-        .collection("users")
-        .document(auth.currentUser?.uid ?: throw IllegalStateException("Not logged in"))
-        .collection("budgets")
+    /**
+     * Fetch the targetUid field stored in the current user's profile document.
+     * This is the UID under which budgets will actually be stored.
+     */
+    private fun fetchTargetUid(
+        onResult: (String?) -> Unit,
+        onError: (Exception) -> Unit = {}
+    ) {
+        val currentUid = auth.currentUser?.uid
+        if (currentUid == null) {
+            onError(IllegalStateException("Not logged in"))
+            return
+        }
 
-    fun addBudget(budget: Budget, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        db.collection("users").document(currentUid).get()
+            .addOnSuccessListener { snap ->
+                val targetUid = snap.getString("uid")
+                if (targetUid.isNullOrBlank()) {
+                    onError(IllegalStateException("targetUid not found in user profile"))
+                } else {
+                    onResult(targetUid)
+                }
+            }
+            .addOnFailureListener { e -> onError(e) }
+    }
+
+    /**
+     * Helper to work with the budgets collection.
+     * Ensures we have the correct targetUid before accessing the collection.
+     */
+    private fun withBudgetsRef(
+        onError: (Exception) -> Unit = {},
+        block: (CollectionReference) -> Unit
+    ) {
+        fetchTargetUid(
+            onResult = { targetUid ->
+                if (targetUid == null) {
+                    onError(IllegalStateException("targetUid null"))
+                    return@fetchTargetUid
+                }
+                val ref = db.collection("users").document(targetUid).collection("budgets")
+                block(ref)
+            },
+            onError = onError
+        )
+    }
+
+    /**
+     * Public version of budgetsRef if you want direct access.
+     */
+    fun userBudgetsRef(
+        onReady: (CollectionReference) -> Unit,
+        onError: (Exception) -> Unit = {}
+    ) = withBudgetsRef(onError, onReady)
+
+    /**
+     * Add a new budget document under the targetUid.
+     */
+    fun addBudget(
+        budget: Budget,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
         Log.d("REPOSITORY", "Firestore push: $budget")
-
 
         val sanitized = if (budget.chosenType.equals("Yearly", true)) {
             budget.copy(chosenCategory = null)
         } else budget
-
 
         val map = hashMapOf(
             "id" to sanitized.id,
@@ -33,33 +88,42 @@ class BudgetRepository {
             "checked" to sanitized.checked,
             "startDate" to (sanitized.startDate ?: ""),
             "endDate" to (sanitized.endDate ?: "")
-        )
-        sanitized.chosenCategory?.let { map["chosencategory"] = it }
+        ).apply {
+            sanitized.chosenCategory?.let { put("chosencategory", it) }
+        }
 
-        userBudgetsRef()
-            .add(map)
-            .addOnSuccessListener { ref ->
-                val newId = ref.id
-                ref.update("id", newId)
-                    .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener(onFailure)
-            }
-            .addOnFailureListener { e -> onFailure(e) }
+        withBudgetsRef(
+            onError = onFailure
+        ) { ref ->
+            ref.add(map)
+                .addOnSuccessListener { docRef ->
+                    val newId = docRef.id
+                    docRef.update("id", newId)
+                        .addOnSuccessListener { onSuccess() }
+                        .addOnFailureListener(onFailure)
+                }
+                .addOnFailureListener(onFailure)
+        }
     }
 
-
-    fun getBudgets(onSuccess: (List<Budget>) -> Unit, onFailure: (Exception) -> Unit) {
-        try {
-            userBudgetsRef()
-                .get()
-                .addOnSuccessListener { snapshot ->
+    /**
+     * Get all budgets for the target user.
+     */
+    fun getBudgets(
+        onSuccess: (List<Budget>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        withBudgetsRef(
+            onError = onFailure
+        ) { ref ->
+            ref.get()
+                .addOnSuccessListener { snapshot: QuerySnapshot ->
                     val list = snapshot.documents.map { doc ->
                         val data = doc.data ?: emptyMap<String, Any?>()
                         Budget(
                             id = (data["id"] as? String) ?: doc.id,
                             name = data["name"] as? String ?: "",
                             chosenType = data["chosentype"] as? String ?: "",
-                            // CHANGE: nullable + normalize blanks to null
                             chosenCategory = (data["chosencategory"] as? String)?.ifBlank { null },
                             amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
                             checked = data["checked"] as? Boolean ?: false,
@@ -71,12 +135,46 @@ class BudgetRepository {
                     onSuccess(list)
                 }
                 .addOnFailureListener(onFailure)
-        } catch (e: IllegalStateException) {
-            onFailure(e)
         }
     }
 
+    /**
+     * Get budgets filtered by category.
+     */
+    fun getBudgetCategory(
+        category: String,
+        onSuccess: (List<Budget>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        withBudgetsRef(
+            onError = onFailure
+        ) { ref ->
+            ref.whereEqualTo("chosencategory", category)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val results = snapshot.documents.map { res ->
+                        val cate = res.data ?: emptyMap<String, Any?>()
+                        Budget(
+                            id = (cate["id"] as? String) ?: res.id,
+                            name = cate["name"] as? String ?: "",
+                            chosenType = cate["chosentype"] as? String ?: "",
+                            chosenCategory = (cate["chosencategory"] as? String)?.ifBlank { null },
+                            amount = (cate["amount"] as? Number)?.toDouble() ?: 0.0,
+                            checked = cate["checked"] as? Boolean ?: false,
+                            startDate = cate["startDate"] as? String,
+                            endDate = cate["endDate"] as? String
+                        )
+                    }
+                    Log.d("REPO", "getBudgetCategory: found ${results.size} budgets")
+                    onSuccess(results)
+                }
+                .addOnFailureListener(onFailure)
+        }
+    }
 
+    /**
+     * Delete a budget by its ID.
+     */
     fun deleteBudget(
         id: String,
         onSuccess: () -> Unit,
@@ -86,50 +184,14 @@ class BudgetRepository {
             onFailure(IllegalArgumentException("Missing id for delete"))
             return
         }
-        userBudgetsRef()
-            .document(id)
-            .delete()
-            .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener(onFailure)
-    }
-    fun getbudgetcategory(
-        category: String,
-        onSuccess: (List<Budget>) -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        try {
-            userBudgetsRef()
-                .whereEqualTo("chosencategory", category)
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    val results = snapshot.documents.map { res ->
-                        val cate = res.data ?: emptyMap<String, Any?>()
-                        Budget(
-                            id = (cate["id"] as? String) ?: res.id,
-                            name = cate["name"] as? String ?: "",
-                            chosenType = cate["chosentype"] as? String ?: "",
-                            // CHANGE: nullable + normalize blanks to null
-                            chosenCategory = (cate["chosencategory"] as? String)?.ifBlank { null },
-                            amount = (cate["amount"] as? Number)?.toDouble() ?: 0.0,
-                            checked = cate["checked"] as? Boolean ?: false,
-                            startDate = cate["startDate"] as? String,
-                            endDate = cate["endDate"] as? String
-                        )
-                    }
-                    Log.d("REPO", "getBudgets: found ${results.size} budgets")
-                    onSuccess(results)
-                }
+
+        withBudgetsRef(
+            onError = onFailure
+        ) { ref ->
+            ref.document(id)
+                .delete()
+                .addOnSuccessListener { onSuccess() }
                 .addOnFailureListener(onFailure)
-        } catch (e: IllegalStateException) {
-            onFailure(e)
         }
     }
-
-
-
-
-
-
-
-
 }

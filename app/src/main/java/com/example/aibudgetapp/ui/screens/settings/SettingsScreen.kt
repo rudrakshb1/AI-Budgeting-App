@@ -34,7 +34,7 @@ fun SettingsScreen(
     bottomBar: @Composable (() -> Unit)? = null,
     onMenu: () -> Unit = {},
     onEditProfilePhoto: (Uri?) -> Unit,
-    onAddUser: () -> Unit = {},
+    onAddUser: (email: String, password: String, firstName: String, lastName: String?) -> Unit,
     onNavigatePasscode: () -> Unit = {},
     onNavigateReminders: () -> Unit = {},
     onNavigateExport: () -> Unit = {},
@@ -64,6 +64,7 @@ fun SettingsScreen(
     var newName by remember { mutableStateOf(uiState.displayName) }
     var newPhoto by remember { mutableStateOf(uiState.photoUri) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showAddUser by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { AppTopBar(onMenu = onMenu) },
@@ -129,7 +130,7 @@ fun SettingsScreen(
                     contentAlignment = Alignment.CenterEnd
                 ) {
                     AssistChip(
-                        onClick = onAddUser,
+                        onClick = { showAddUser = true },
                         label = { Text("Add user") },
                         leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) }
                     )
@@ -241,6 +242,7 @@ fun SettingsScreen(
             }
         }
 
+        // AlertDialog for theme selection (follow system / light / dark)
         if (showThemeDialog) {
             AlertDialog(
                 onDismissRequest = { showThemeDialog = false },
@@ -294,6 +296,23 @@ fun SettingsScreen(
                 }
             )
         }
+
+        // "Add User" dialog: collects user details and calls onAddUser callback
+        if (showAddUser) {
+            AddUserDialog(
+                onDismiss = { showAddUser = false },
+                onCreate = { email, password, firstName, lastName ->
+                    onAddUser(
+                        email.trim(),
+                        password,
+                        firstName.trim(),
+                        lastName?.trim().takeIf { !it.isNullOrBlank() }
+                    )
+                    showAddUser = false
+                }
+            )
+        }
+
     }
 }
 
@@ -303,6 +322,7 @@ private data class SettingTileData(
     val onClick: () -> Unit
 )
 
+// Top app bar with menu button and app title
 @Composable
 private fun AppTopBar(
     onMenu: () -> Unit
@@ -331,7 +351,7 @@ private fun AppTopBar(
     }
 }
 
-
+// Individual tile UI used in the settings grid
 @Composable
 private fun SettingTile(data: SettingTileData) {
     Card(

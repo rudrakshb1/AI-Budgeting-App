@@ -20,6 +20,7 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFac
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
 import com.example.aibudgetapp.notifications.NotificationsScreen
+import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 
 sealed class Screen {
     object HOME : Screen()
@@ -79,13 +80,15 @@ fun ScreenContainer(
                             onEditProfilePhoto = { newPhoto ->
                                 settingsViewModel.onEditProfilePhoto(newPhoto)
                             },
-                            onAddUser = settingsViewModel::onAddUserClick,
                             onLogout = {
                                 screenContainerViewModel.navigateTo(Screen.HOME)
                                 onLogout()
                             },
                             onConfirmEditName = { newName ->
                                 settingsViewModel.onEditProfileDisplayName(newName)
+                            },
+                            onAddUser = { email, password, firstName, lastName ->
+                                RegistrationViewModel().addUser(email, password, firstName, lastName, settingsViewModel.getUid())
                             },
                             onDeleteAccount = {
                                 settingsViewModel.deleteAccount(

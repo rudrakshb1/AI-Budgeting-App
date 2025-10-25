@@ -2,18 +2,20 @@ package com.example.aibudgetapp.data
 
 import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.FieldValue
-import kotlinx.coroutines.tasks.await
+
 class AccountRepository(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore
 ) {
     fun currentDisplayName(): String = auth.currentUser?.displayName.orEmpty()
     fun currentPhotoUri(): Uri? = auth.currentUser?.photoUrl
+    fun currentUid(): String = auth.currentUser?.uid.orEmpty()
 
     suspend fun updateDisplayName(newName: String) {
         val user = auth.currentUser ?: error("Not logged in")
@@ -60,22 +62,24 @@ class AccountRepository(
         }
     }
 
-    suspend fun ensureUserProfileDoc() {
-        val user = auth.currentUser ?: return
+    suspend fun ensureUserProfileDoc(user: FirebaseUser?, uid: String? = null, displayName: String? = null) {
+        if (user == null) return
         val doc = db.collection("users").document(user.uid)
 
         val snap = doc.get().await()
-        val base = mutableMapOf<String, Any>(
-            "uid" to user.uid,
-            "email" to (user.email ?: ""),
-            "displayName" to (user.displayName ?: ""),
-            "lastLoginAt" to FieldValue.serverTimestamp()
-        )
         if (!snap.exists()) {
-            base["createdAt"] = FieldValue.serverTimestamp()
-        }
+            updateDisplayName(displayName.toString());
+            val base = mutableMapOf<String, Any>(
+                "uid" to (uid ?: user.uid),
+                "email" to (user.email ?: ""),
+                "displayName" to (displayName ?: user.displayName ?: ""),
+                "lastLoginAt" to FieldValue.serverTimestamp(),
+                "createdAt" to FieldValue.serverTimestamp()
+            )
 
-        // DO NOT DELETE - this merges users data
-        doc.set(base, SetOptions.merge()).await()
+            doc.set(base, SetOptions.merge()).await()
+        } else {
+            doc.update("lastLoginAt", FieldValue.serverTimestamp()).await()
+        }
     }
 }

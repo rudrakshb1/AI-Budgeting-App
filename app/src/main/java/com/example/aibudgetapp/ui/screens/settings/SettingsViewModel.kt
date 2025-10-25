@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.aibudgetapp.data.AccountRepository
+import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -28,6 +29,10 @@ class SettingsViewModel(
         val currentPhoto = accountRepo.currentPhotoUri()
         if (currentDisplayName.isNotBlank()) setDisplayName(currentDisplayName)
         if (currentPhoto != null) setPhoto(currentPhoto)
+    }
+
+    fun getUid(): String {
+        return accountRepo.currentUid()
     }
 
     private fun setDisplayName(name: String) {
@@ -81,9 +86,6 @@ class SettingsViewModel(
                 .onFailure { e -> onError(e.localizedMessage ?: "Couldn't delete account") }
         }
     }
-
-    fun onAddUserClick() { /* TODO if we to do multi-user */ }
-    fun onEditProfileClick() { }
 }
 
 class SettingsViewModelFactory(
