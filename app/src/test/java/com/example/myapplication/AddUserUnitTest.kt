@@ -121,9 +121,9 @@ class AddUserDialogTest {
 
         // Assert variables
         assert(called)
-        assert(capturedEmail == "user2@example.com")
-        assert(capturedPassword == "abcdef")
-        assert(capturedFirst == "Test2")
+        assert(capturedEmail == "ok@example.com")
+        assert(capturedPassword == "123456")
+        assert(capturedFirst == "Jane")
         assert(capturedLast == "Doe")
     }
 
