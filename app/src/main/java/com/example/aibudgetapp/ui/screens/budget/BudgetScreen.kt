@@ -32,6 +32,19 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
 
     // Tab selection
     var selectedTab by remember { mutableStateOf(BudgetTab.OVERVIEW) }
+    var budgetToEdit by remember { mutableStateOf<Budget?>(null) }
+    var showEditScreen by remember { mutableStateOf(false) }
+
+    if (showEditScreen && budgetToEdit != null) {
+        BudgetScreen(
+            onBackClick = {
+                showEditScreen = false
+                budgetToEdit = null
+            },
+            budgetToEdit = budgetToEdit
+        )
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -70,8 +83,12 @@ fun BudgetOverviewScreen(onAddBudgetClick: () -> Unit = {}) {
             //  Tab contents
             when (selectedTab) {
                 BudgetTab.OVERVIEW -> {
-                    //  if you want Overview to use the same ViewModel, pass budgetViewModel here
-                    OverviewScreen()
+                    OverviewScreen(
+                        onEditBudget = { budget ->
+                            budgetToEdit = budget
+                            showEditScreen = true
+                        }
+                    )
                 }
                 BudgetTab.SPENDING -> {
                     SpendingScreen(
