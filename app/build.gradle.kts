@@ -58,6 +58,10 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 
@@ -132,4 +136,9 @@ dependencies {
 
     //AI
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation("androidx.compose.material3:material3:1.3.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.7.3")
+    testImplementation("org.robolectric:robolectric:4.12.2")
+
 }
