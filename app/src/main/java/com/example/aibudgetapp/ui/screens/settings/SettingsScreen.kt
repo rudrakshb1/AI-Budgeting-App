@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.aibudgetapp.ui.screens.settings
 
-
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,9 +51,8 @@ fun SettingsScreen(
 
     val tiles = listOf(
         SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
-        SettingTileData("Themes", Icons.Filled.DarkMode, {showThemeDialog = true}),
+        SettingTileData("Themes", Icons.Filled.DarkMode, { showThemeDialog = true }),
         SettingTileData("Passcode", Icons.Filled.Lock, onNavigatePasscode),
-        SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
         SettingTileData("Export Data", Icons.Filled.Storage, onNavigateExport),
         SettingTileData("Uploaded Data", Icons.Filled.UploadFile, onNavigateUploads),
         SettingTileData("FAQ", Icons.AutoMirrored.Filled.HelpOutline, onNavigateFaq),
@@ -71,7 +69,7 @@ fun SettingsScreen(
         bottomBar = { bottomBar?.invoke() }
     ) { padding ->
 
-    Column(
+        Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
@@ -178,6 +176,8 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(12.dp))
 
+
+
             LazyVerticalGrid(
                 modifier = Modifier
                     .weight(1f)
@@ -270,8 +270,6 @@ fun SettingsScreen(
             )
         }
 
-
-
         if (showDeleteConfirm) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirm = false },
@@ -351,7 +349,6 @@ private fun AppTopBar(
     }
 }
 
-// Individual tile UI used in the settings grid
 @Composable
 private fun SettingTile(data: SettingTileData) {
     Card(
@@ -385,4 +382,6 @@ private fun SettingTile(data: SettingTileData) {
         }
     }
 }
+
+
 
