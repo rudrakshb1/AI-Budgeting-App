@@ -83,5 +83,26 @@ object NotificationLog {
         }
         writeArray(ctx, arr)
     }
+
+    fun deleteOne(ctx: Context, id: Long): Boolean {
+        val arr = readArray(ctx)
+        var removed = false
+        val out = JSONArray()
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            if (o.optLong("id") == id) {
+                removed = true
+                continue // skip this one (that's delete)
+            }
+            out.put(o)
+        }
+        if (removed) writeArray(ctx, out)
+        return removed
+    }
+
+    // NEW — Clear all notifications
+    fun clearAll(ctx: Context) {
+        writeArray(ctx, JSONArray())
+    }
 }
 

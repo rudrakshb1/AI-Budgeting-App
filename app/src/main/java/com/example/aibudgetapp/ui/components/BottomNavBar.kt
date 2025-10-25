@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Settings
 
 @Composable
@@ -54,7 +55,7 @@ fun BottomNavBar(
                 onClick = onBudgetClick
             )
             NavItem(
-                icon = { Icon(Icons.Filled.Add, contentDescription = "Chatbot", tint = MaterialTheme.colorScheme.onSurface) },
+                icon = { Icon(Icons.Filled.Chat, contentDescription = "Chatbot", tint = MaterialTheme.colorScheme.onSurface) },
                 label = "Chatbot",
                 onClick = onChatbotClick
             )

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.aibudgetapp.constants.CategoryType
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -187,9 +188,7 @@ fun SpendingScreen(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    val fixedCategories = listOf(
-        "Food & Drink", "Rent", "Vacation", "Groceries", "Transport", "Bills"
-    )
+    val fixedCategories = CategoryType.entries.map { it.value }
 
     val barChartXAxisLabels = fixedCategories + "Other"
 

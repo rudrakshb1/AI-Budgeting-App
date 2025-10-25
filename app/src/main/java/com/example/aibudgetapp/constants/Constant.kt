@@ -7,3 +7,12 @@ enum class BudgetType(val value: String) {
     MONTHLY("Monthly"),
     WEEKLY("Weekly")
 }
+enum class CategoryType(val value: String) {
+    FOOD_AND_DRINK("Food & Drink"),
+    RENT("Rent"),
+    UTILITIES("Utilities"),
+    FUEL_TRANSPORT("Fuel & Transport"),
+    HEALTH("Health"),
+    SHOPPING("Shopping"),
+    OTHER("Other")
+}
