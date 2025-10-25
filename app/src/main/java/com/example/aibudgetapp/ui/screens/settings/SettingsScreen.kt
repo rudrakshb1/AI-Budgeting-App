@@ -54,7 +54,6 @@ fun SettingsScreen(
         SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
         SettingTileData("Themes", Icons.Filled.DarkMode, {showThemeDialog = true}),
         SettingTileData("Passcode", Icons.Filled.Lock, onNavigatePasscode),
-        SettingTileData("Reminders", Icons.Filled.Notifications, onNavigateReminders),
         SettingTileData("Export Data", Icons.Filled.Storage, onNavigateExport),
         SettingTileData("Uploaded Data", Icons.Filled.UploadFile, onNavigateUploads),
         SettingTileData("FAQ", Icons.AutoMirrored.Filled.HelpOutline, onNavigateFaq),
