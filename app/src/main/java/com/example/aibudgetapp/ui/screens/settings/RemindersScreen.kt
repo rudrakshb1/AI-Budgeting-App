@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.aibudgetapp.notifications.ThresholdNotifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,11 +17,13 @@ fun RemindersScreen(
     onBack: () -> Unit = {},
     onToggleChanged: (Boolean) -> Unit = {}
 ) {
-    var enabled by remember { mutableStateOf(true) } // UI-only for now
+    // read current value from storage
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(ThresholdNotifier.isRemindersEnabled(context)) }
 
     Scaffold(
         topBar = {
-            TopAppBar( // ← works on all Material3 versions
+            TopAppBar(
                 title = { Text("Reminders") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -54,6 +58,8 @@ fun RemindersScreen(
                     checked = enabled,
                     onCheckedChange = {
                         enabled = it
+                        // persist to global setting and let caller know
+                        ThresholdNotifier.setRemindersEnabled(context, it)
                         onToggleChanged(it)
                     }
                 )
