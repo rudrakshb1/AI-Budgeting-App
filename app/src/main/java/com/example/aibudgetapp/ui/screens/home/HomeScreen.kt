@@ -35,6 +35,10 @@ import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
 import com.example.aibudgetapp.notifications.ThresholdNotifier
 import kotlin.math.round
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
+import java.time.Year
 
 @Composable
 private fun EnsureNotifPermission() {
@@ -66,7 +70,7 @@ fun HomeScreen(
     EnsureNotifPermission()
     val homeViewModel = remember { HomeViewModel(BudgetRepository(), TransactionRepository()) }
 
-        LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
         homeViewModel.getMonthlyBudgetList()
         homeViewModel.getWeeklyBudgetList()
         homeViewModel.get12MonthlyTransaction()
@@ -109,6 +113,83 @@ fun HomeScreen(
         )
     }
 
+    //YEARLY threshold check (single yearly budget)
+    val yearId = LocalDate.now().year.toString()
+
+    LaunchedEffect(Unit) {
+        val uid = Firebase.auth.currentUser?.uid ?: return@LaunchedEffect
+        val db = Firebase.firestore
+
+        // 1) read the (single) Yearly budget
+        db.collection("users").document(uid).collection("budgets")
+            .whereEqualTo("chosentype", "Yearly")
+            .limit(1)
+            .get()
+            .addOnSuccessListener { budSnap ->
+                // get amount as Double (handles Number or String)
+                val yearlyBudget = budSnap.documents.firstOrNull()?.get("amount")?.let {
+                    when (it) {
+                        is Number -> it.toDouble()
+                        is String -> it.toDoubleOrNull() ?: 0.0
+                        else -> 0.0
+                    }
+                } ?: 0.0
+
+                android.util.Log.d("YearlyCheck", "Budget doc found=${budSnap.size()}; yearlyBudget=$yearlyBudget")
+
+                // 2) sum YTD spending (your app counts only NEGATIVE totals as "spent")
+                val start = "$yearId-01-01"
+                val end = "$yearId-12-31"
+
+                db.collection("users").document(uid).collection("transactions")
+                    .whereGreaterThanOrEqualTo("date", start)
+                    .whereLessThanOrEqualTo("date", end)
+                    .get()
+                    .addOnSuccessListener { txSnap ->
+                        fun num(v: Any?): Double = when (v) {
+                            is Number -> v.toDouble()
+                            is String -> v.toDoubleOrNull() ?: 0.0
+                            else -> 0.0
+                        }
+
+                        val yearlySpent = txSnap.documents.sumOf { d ->
+                            val a = num(d.get("amount"))
+                            val debit = num(d.get("debit"))
+                            kotlin.math.abs(a) + kotlin.math.abs(debit)
+                        }
+
+
+                        val pct = if (yearlyBudget > 0.0) (yearlySpent / yearlyBudget) * 100.0 else 0.0
+                        android.util.Log.d("YearlyCheck", "Tx count=${txSnap.size()}; yearlySpent=$yearlySpent; pct=$pct")
+
+                        // 3) write backfill + maybe fire the OS notification (once per year)
+                        ThresholdNotifier.backfillIfNeeded(
+                            context = context,
+                            label = "Yearly",
+                            periodId = yearId,
+                            spent = yearlySpent,
+                            budget = yearlyBudget
+                        )
+                        val posted = ThresholdNotifier.maybeNotifyCrossing(
+                            context = context,
+                            label = "Yearly",
+                            periodId = yearId,
+                            spent = yearlySpent,
+                            budget = yearlyBudget
+                        )
+                        android.util.Log.d("YearlyCheck", "maybeNotifyYearly posted=$posted")
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("YearlyCheck", "Failed to load yearly transactions", e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("YearlyCheck", "Failed to load yearly budget", e)
+            }
+    }
+
+
+
     var badgeCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -148,6 +229,7 @@ fun HomeScreen(
                         budgetError && transactionError ->
                             (budgetErrorMessage ?: "Failed to load budgets.") + "\n" +
                                     (transactionErrorMessage ?: "Failed to load transactions.")
+
                         budgetError -> budgetErrorMessage ?: "Failed to load budgets."
                         else -> transactionErrorMessage ?: "Failed to load transactions."
                     }
@@ -166,12 +248,13 @@ fun HomeScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                     }
-                }
-                else {
+                } else {
                     item {
-                        Text("📊 Monthly Overview",
+                        Text(
+                            "📊 Monthly Overview",
                             modifier = Modifier.padding(vertical = 16.dp),
-                            style = MaterialTheme.typography.titleMedium)
+                            style = MaterialTheme.typography.titleMedium
+                        )
                         val monthlyRemaining = round((monthlyBudget - monthlySpent) * 100) / 100
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -230,48 +313,44 @@ fun HomeScreen(
                     .padding(16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Button(
-                    onClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) }
-                )
-                { Text("+") }
-            }
-        }
-    }
-}
-
-@Composable
-fun Greeting(
-    name: String,
-    modifier: Modifier = Modifier,
-    // NEW: props for bell UI
-    badgeCount: Int = 0,
-    onBellClick: () -> Unit = {}
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Welcome, $name!",
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.titleLarge
-        )
-        //  NEW: bell with optional badge (kept 0 for now)
-        BadgedBox(
-            badge = {
-                if (badgeCount > 0) {
-                    Badge { Text(badgeCount.coerceAtMost(9).toString()) }
+                    Button(
+                        onClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) }
+                    ) { Text("+") }
                 }
             }
-        ) {
-            IconButton(onClick = onBellClick) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifications"
-
-                )
-            }
         }
     }
-}
+
+        @Composable
+        fun Greeting(
+            name: String,
+            modifier: Modifier = Modifier,
+            badgeCount: Int = 0,
+            onBellClick: () -> Unit = {}
+        ) {
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Welcome, $name!",
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Start,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                BadgedBox(
+                    badge = {
+                        if (badgeCount > 0) {
+                            Badge { Text(badgeCount.coerceAtMost(9).toString()) }
+                        }
+                    }
+                ) {
+                    IconButton(onClick = onBellClick) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "Notifications"
+                        )
+                    }
+                }
+            }
+        }
