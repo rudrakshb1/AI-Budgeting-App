@@ -18,6 +18,7 @@ import androidx.activity.result.ActivityResult
 import com.yalantis.ucrop.UCrop
 import androidx.compose.runtime.saveable.rememberSaveable
 import android.app.Activity
+import com.example.aibudgetapp.constants.CategoryType
 import kotlin.math.floor
 import kotlin.math.min
 
@@ -31,7 +32,7 @@ fun AddTransactionScreen(
     val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
     val transactionSuccess by remember { derivedStateOf { addTransactionViewModel.transactionSuccess } }
 
-    val categories = listOf("Food & Drink", "Rent", "Gas", "Other")
+    val categories = CategoryType.entries.map { it.value }
     var selected by remember { mutableStateOf(categories[0]) }
     var amount by remember { mutableStateOf(0.0) }
     var isExpanded by remember { mutableStateOf(false) }

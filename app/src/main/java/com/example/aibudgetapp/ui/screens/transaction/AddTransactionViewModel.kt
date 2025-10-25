@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import android.content.Context
+import com.example.aibudgetapp.constants.CategoryType
 import com.example.aibudgetapp.ocr.ReceiptOcr
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +34,7 @@ class AddTransactionViewModel(
     var amount: Double by mutableStateOf(0.0)
         private set
 
-    var category: String by mutableStateOf("Food & Drink")
+    var category: String by mutableStateOf(CategoryType.entries.first().value)
         private set
 
     var receiptUri: String? by mutableStateOf(null)

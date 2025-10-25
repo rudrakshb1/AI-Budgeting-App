@@ -6,6 +6,7 @@ import com.google.firebase.firestore.firestore
 import android.util.Log
 import com.google.firebase.firestore.Query
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 class TransactionRepository {
@@ -25,7 +26,7 @@ class TransactionRepository {
     ) {
         Log.d("REPOSITORY", "Firestore push: $transaction")
         try {
-            LocalDate.parse(transaction.date)
+            transaction.date = transaction.date.toIsoDateString()
 
             // Create a new Firestore docRef so we know the ID
             val docRef = userTransactionRef().document()
@@ -91,5 +92,20 @@ class TransactionRepository {
             .delete()
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener(onFailure)
+    }
+
+    fun String.toIsoDateString(): String {
+        val DATE_FORMATS = listOf(
+            DateTimeFormatter.ISO_LOCAL_DATE,        // 2025-10-08
+            DateTimeFormatter.ofPattern("d/M/yyyy"), // 8/10/2025
+            DateTimeFormatter.ofPattern("dd/MM/yyyy")// 08/10/2025
+        )
+        for (fmt in DATE_FORMATS) {
+            try {
+                val parsed = LocalDate.parse(this.trim(), fmt)
+                return parsed.toString()
+            } catch (_: Exception) { }
+        }
+        return this
     }
 }
