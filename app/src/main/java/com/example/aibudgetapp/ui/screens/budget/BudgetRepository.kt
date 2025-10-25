@@ -75,6 +75,37 @@ class BudgetRepository {
             onFailure(e)
         }
     }
+    fun updateBudget(
+        budget: Budget,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        if (budget.id.isBlank()) {
+            onFailure(IllegalArgumentException("Missing id for update"))
+            return
+        }
+
+        val sanitized = if (budget.chosenType.equals("Yearly", true)) {
+            budget.copy(chosenCategory = null)
+        } else budget
+
+        val map = hashMapOf(
+            "id" to sanitized.id,
+            "name" to sanitized.name,
+            "chosentype" to sanitized.chosenType,
+            "amount" to sanitized.amount,
+            "checked" to sanitized.checked,
+            "startDate" to (sanitized.startDate ?: ""),
+            "endDate" to (sanitized.endDate ?: "")
+        )
+        sanitized.chosenCategory?.let { map["chosencategory"] = it }
+
+        userBudgetsRef()
+            .document(sanitized.id)
+            .set(map)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener(onFailure)
+    }
 
 
     fun deleteBudget(

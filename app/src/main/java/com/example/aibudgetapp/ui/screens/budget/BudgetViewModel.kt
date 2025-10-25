@@ -130,10 +130,29 @@ class BudgetViewModel(
                 if (category.isBlank()) {
                     true
                 } else {
-                    b.chosenCategory?.contains(category, ignoreCase = true) == true
+                    b.chosenCategory?.contains(category, ignoreCase = true) == true ||
+                            b.startDate?.contains(category, ignoreCase = true) == true ||
+                            b.endDate?.contains(category, ignoreCase = true) == true ||
+                            b.name?.contains(category, ignoreCase = true) == true ||
+                            b.chosenType?.contains(category, ignoreCase = true) == true
                 }
             }
             .sortedBy { it.name }
+    }
+    fun updateBudget(budget: Budget){
+        repository.updateBudget(
+            budget = budget,
+            onSuccess = {
+                budgetSuccess = true
+                budgetError = false
+                fetchBudgets()
+            },
+            onFailure = { e ->
+                errorMessage = e.message
+                budgetError = true
+                budgetSuccess = false
+            }
+        )
     }
 
 
