@@ -75,10 +75,10 @@ fun CategoryDialog(
                         category = finalCategory,
                         date = formattedDate
                     )
-                    addTransactionViewModel.onSaveTransaction(
-                        category = finalCategory,
-                        imageUri = Uri.EMPTY // or the real receipt Uri if available
-                    )
+                    //addTransactionViewModel.onSaveTransaction(
+                     //   category = finalCategory,
+                     //   imageUri = Uri.EMPTY // or the real receipt Uri if available
+                    //)
                     onSaveComplete(finalCategory)
                 },
                 enabled = finalCategory.isNotBlank()

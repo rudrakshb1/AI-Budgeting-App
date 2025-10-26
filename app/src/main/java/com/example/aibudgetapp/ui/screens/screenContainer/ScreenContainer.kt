@@ -22,6 +22,10 @@ import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
 import com.example.aibudgetapp.notifications.NotificationsScreen
 import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 import com.example.aibudgetapp.ui.screens.settings.RemindersScreen
+import androidx.compose.runtime.remember
+//import com.example.aibudgetapp.BuildConfig
+import com.example.aibudgetapp.BuildConfig
+
 
 
 
@@ -43,6 +47,8 @@ fun ScreenContainer(
     onLogout: () -> Unit
 ) {
     val screenContainerViewModel: ScreenContainerViewModel = viewModel()
+
+
 
     // Use the Factory to create ViewModel with repo dependency
     val addTransactionViewModel: AddTransactionViewModel = viewModel(

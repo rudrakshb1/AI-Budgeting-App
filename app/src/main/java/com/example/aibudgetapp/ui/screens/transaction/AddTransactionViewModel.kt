@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlin.collections.fold
+import java.io.File
+import java.io.FileOutputStream
 
 enum class Period { WEEK, MONTH }
 
@@ -58,13 +59,32 @@ class AddTransactionViewModel(
     var selectedPeriod: Period by mutableStateOf(Period.WEEK)
         private set
 
-    // NEW CODE: --- ADD THIS ---
+
     private val _spendingByCategory = MutableStateFlow<Map<String, Double>>(emptyMap())
     val spendingByCategory: StateFlow<Map<String, Double>> = _spendingByCategory
 
     init {
         fetchTransactions()   // automatically load when ViewModel is created
     }
+
+
+    fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val file = File(context.filesDir, "${UUID.randomUUID()}.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath  // return saved file path
+        } catch (e: Exception) {
+            Log.e("LOCAL_SAVE", "Failed to save image locally", e)
+            null
+        }
+    }
+    // --- END NEW FUNCTION ---
 
     // Call this whenever transaction list changes
     fun updateSpendingByCategory() {
@@ -112,12 +132,18 @@ class AddTransactionViewModel(
 
     fun onAmountChange(input: String) { amount = input.toDoubleOrNull() ?: 0.0 }
     fun onCategoryChange(value: String) { category = value }
-    fun onReceiptSelected(uri: Uri) { receiptUri = uri.toString() }
+
+    // UPDATED: save chosen image locally
+    fun onReceiptSelected(uri: Uri, context: Context) {
+        val localPath = saveImageToInternalStorage(context, uri)
+        receiptUri = localPath
+    }
+
     fun resetSavedFlag() { transactionSaved = false }
 
-    fun onSaveTransaction(category: String, imageUri: Uri) {
+    fun onSaveTransaction(category: String, receiptUrl: String?) {
         if (transactionSaved) {
-            Log.w("DUPLICATE_CHECK", " Blocked duplicate save")
+            Log.w("DUPLICATE_CHECK", "Blocked duplicate save")
             return
         }
         transactionSaved = true
@@ -129,7 +155,8 @@ class AddTransactionViewModel(
                 description = parsed.merchant.ifBlank { "Unknown" },
                 amount = parsed.total,
                 category = category,
-                date = LocalDate.now().toString()
+                date = LocalDate.now().toString(),
+                receiptUrl = receiptUrl
             )
             addTransaction(transaction)
         }
@@ -138,48 +165,6 @@ class AddTransactionViewModel(
         ocrResult = null
     }
 
-    fun onSaveTransactionWithImage(category: String, imageUri: Uri) {
-        if (transactionSaved) {
-            Log.w("DUPLICATE_CHECK", "Blocked duplicate save")
-            return
-        }
-        transactionSaved = true
-        Log.d("DUPLICATE_CHECK", "Saving transaction with image")
-        // ADD
-        ocrResult?.let { parsed ->
-            val transaction = Transaction(
-                id = "",
-                description = parsed.merchant.ifBlank { "Unknown" },
-                amount = parsed.total,
-                category = category,
-                date = LocalDate.now().toString()
-            )
-            // Use the new repo helper that uploads and then patches receiptUrl
-            repository.addTransactionWithImage(
-                imageUri = imageUri,
-                transaction = transaction,
-                onSuccess = {
-                    Log.d("Add_Transaction", "Saved with image")
-                    fetchTransactions()
-                    updateSpendingByCategory()
-                    transactionSuccess = true
-                    showCategoryDialog = false
-                    ocrResult = null
-                },
-                onFailure = { e ->
-                    Log.e("Add_Transaction", "Save with image failed: $e")
-                    transactionError = true
-                    transactionSaved = false
-                }
-            )
-        } ?: run {
-            Log.w("Add_Transaction", "No OCR result; nothing to save")
-            transactionSaved = false
-        }
-    }
-
-
-
     fun addTransaction(t: Transaction) {
         Log.d("Add_Transaction", "Saving transaction to repository: $t")
         repository.addTransaction(
@@ -187,7 +172,7 @@ class AddTransactionViewModel(
             onSuccess = {
                 Log.d("Add_Transaction", "Successfully saved: $t")
                 fetchTransactions()
-                updateSpendingByCategory() // NEW: call update after every change
+                updateSpendingByCategory()
                 transactionSuccess = true
             },
             onFailure = { e ->
@@ -268,7 +253,7 @@ class AddTransactionViewModel(
         repository.getTransactions(
             onSuccess = { list ->
                 transactions = list
-                updateSpendingByCategory() // NEW: update after fetching
+                updateSpendingByCategory()
                 isLoading = false
             },
             onFailure = { e ->
@@ -278,31 +263,20 @@ class AddTransactionViewModel(
         )
     }
 
-    fun addFromOcr(
-        merchant: String,
-        total: Double,
-        rawText: String,
-        imageUri: Uri,
-    ) {
-        // Just prepare the OCR result
+    fun addFromOcr(merchant: String, total: Double, rawText: String, imageUri: Uri) {
         ocrResult = ParsedReceipt(
             merchant = merchant.ifBlank { "Unknown" },
             total = total,
             dateEpochMs = System.currentTimeMillis(),
             rawText = rawText
         )
-
-
-        showCategoryDialog = true   // ask user to pick category
+        showCategoryDialog = true
     }
-
-
 
     fun addFromParsed(parsed: ParsedReceipt, imageUri: Uri) {
         Log.d("VIEWMODEL", "Parsed Receipt: merchant=${parsed.merchant}, total=${parsed.total}")
         ocrResult = parsed
         showCategoryDialog = true
-        //  Don't call addFromOcr() here, wait for user confirmation
     }
 
     fun importTransactions(transactions: List<Transaction>) {
@@ -311,8 +285,8 @@ class AddTransactionViewModel(
                 transaction = tx,
                 onSuccess = {
                     Log.d("CSV_IMPORT", "Inserted txn: $tx")
-                    fetchTransactions()           // refresh UI after insert
-                    updateSpendingByCategory()    // keep charts in sync
+                    fetchTransactions()
+                    updateSpendingByCategory()
                 },
                 onFailure = { e ->
                     Log.e("CSV_IMPORT", "Failed insert: ${e.message}")
@@ -322,19 +296,17 @@ class AddTransactionViewModel(
         }
     }
 
-
     fun deleteTransaction(id: String) {
         repository.deleteTransaction(
             id = id,
             onSuccess = {
                 fetchTransactions()
-                updateSpendingByCategory() // NEW: update after delete
+                updateSpendingByCategory()
             },
             onFailure = { e -> transactionError = true }
         )
     }
 }
-
 
 class AddTransactionViewModelFactory(
     private val repository: TransactionRepository

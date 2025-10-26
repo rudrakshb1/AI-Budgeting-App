@@ -1,19 +1,42 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.UUID
 
 class TransactionRepository {
 
     private val db = Firebase.firestore
     private val auth = Firebase.auth
+
+
+    fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val file = File(context.filesDir, "${UUID.randomUUID()}.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath // return saved path
+        } catch (e: Exception) {
+            Log.e("LOCAL_SAVE", "Failed to save image locally", e)
+            null
+        }
+    }
 
     private fun fetchTargetUid(
         onResult: (String?) -> Unit,
@@ -89,61 +112,6 @@ class TransactionRepository {
         }
     }
 
-    // Save transaction, then upload image and set receiptUrl (keeps addTransaction() unchanged)
-    fun addTransactionWithImage(
-        imageUri: android.net.Uri,
-        transaction: Transaction,
-        onSuccess: () -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        try {
-            transaction.date = transaction.date.toIsoDateString()
-            withTransactionsRef(
-                onError = onFailure
-            ) { ref ->
-                val docRef = ref.document()
-                val txWithId = transaction.copy(id = docRef.id)
-
-                // 1) Save the transaction first (same behavior as addTransaction)
-                docRef.set(txWithId)
-                    .addOnSuccessListener {
-                        // 2) After save succeeds, upload the image and set receiptUrl
-                        fetchTargetUid(
-                            onResult = { ownerUid ->
-                                if (ownerUid == null) {
-                                    onFailure(IllegalStateException("ownerUid null"))
-                                    return@fetchTargetUid
-                                }
-                                val storageRef = com.google.firebase.storage.FirebaseStorage
-                                    .getInstance()
-                                    .reference
-                                    .child("receipts/$ownerUid/${docRef.id}.jpg")
-
-                                storageRef.putFile(imageUri)
-                                    .continueWithTask { task ->
-                                        if (!task.isSuccessful) {
-                                            throw task.exception ?: RuntimeException("Upload failed")
-                                        }
-                                        storageRef.downloadUrl
-                                    }
-                                    .addOnSuccessListener { downloadUri ->
-                                        docRef.update("receiptUrl", downloadUri.toString())
-                                            .addOnSuccessListener { onSuccess() }
-                                            .addOnFailureListener(onFailure)
-                                    }
-                                    .addOnFailureListener(onFailure)
-                            },
-                            onError = onFailure
-                        )
-                    }
-                    .addOnFailureListener(onFailure)
-            }
-        } catch (e: Exception) {
-            onFailure(e)
-        }
-    }
-
-
     fun getTransactions(
         onSuccess: (List<Transaction>) -> Unit,
         onFailure: (Exception) -> Unit
@@ -165,7 +133,7 @@ class TransactionRepository {
                             },
                             category = data["category"] as? String ?: "",
                             date = data["date"] as? String ?: "",
-                            receiptUrl = data["receiptUrl"] as? String
+                            receiptUrl = data["receiptUrl"] as? String // optional local image path
                         )
                     }
                     onSuccess(list)
@@ -192,7 +160,7 @@ class TransactionRepository {
                 .addOnFailureListener(onFailure)
         }
     }
-    
+
     fun String.toIsoDateString(): String {
         val DATE_FORMATS = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,        // 2025-10-08
