@@ -74,7 +74,7 @@ class LoginViewModel : ViewModel() {
                                 auth = com.google.firebase.auth.FirebaseAuth.getInstance(),
                                 db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
                             )
-                            repo.ensureUserProfileDoc()
+                            repo.ensureUserProfileDoc(auth.currentUser)
                         } catch (_: Exception) {
                         }
                     }

@@ -1,6 +1,7 @@
 package com.example.aibudgetapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -54,12 +55,13 @@ class MainActivity : ComponentActivity() {
                         val repo = remember(sessionKey) {
                             AccountRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
                         }
-
+                        Log.d("MainActivity", "uid: ${repo.currentUid()}, displayName: ${repo.currentDisplayName()}")
                         val settingsViewModel: SettingsViewModel =
                             viewModel(
                                 key = "settings-$sessionKey",
                                 factory = SettingsViewModelFactory(repo)
                             )
+
                         ScreenContainer(
                             settingsViewModel = settingsViewModel,
                             onLogout = { loginViewModel.logout() }
