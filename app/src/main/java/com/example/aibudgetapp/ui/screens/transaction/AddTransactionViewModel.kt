@@ -113,16 +113,17 @@ class AddTransactionViewModel(
     }
 
     private fun isInCurrentWeek(dateString: String, now: LocalDate): Boolean {
-        val txDate = LocalDate.parse(dateString)
+        val txDate = runCatching { LocalDate.parse(dateString) }.getOrNull() ?: return false
         val weekStart = now.minusDays(now.dayOfWeek.value.toLong() - 1)
         val weekEnd = weekStart.plusDays(6)
         return !txDate.isBefore(weekStart) && !txDate.isAfter(weekEnd)
     }
 
     private fun isInCurrentMonth(dateString: String, now: LocalDate): Boolean {
-        val txDate = LocalDate.parse(dateString)
+        val txDate = runCatching { LocalDate.parse(dateString) }.getOrNull() ?: return false
         return txDate.month == now.month && txDate.year == now.year
     }
+
 
     fun getSpendingByCategory(): Map<String, Double> {
         return getTransactionsInPeriod()

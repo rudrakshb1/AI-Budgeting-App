@@ -23,6 +23,9 @@ import com.example.aibudgetapp.notifications.NotificationsScreen
 import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 import com.example.aibudgetapp.ui.screens.settings.RemindersScreen
 import com.example.aibudgetapp.ui.screens.settings.UploadedReceiptsScreen
+import com.example.aibudgetapp.ui.screens.settings.ExportReportScreen
+import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
+import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
 
 
 
@@ -38,6 +41,11 @@ sealed class Screen {
     object NOTIFICATIONS : Screen()
     object REMINDERS : Screen()
     object UPLOADED_RECEIPTS : Screen()
+    object EXPORT_DATA : Screen()
+
+
+
+
 }
 
 @Composable
@@ -53,6 +61,12 @@ fun ScreenContainer(
     val addTransactionViewModel: AddTransactionViewModel = viewModel(
         factory = AddTransactionViewModelFactory(TransactionRepository())
     )
+
+    val budgetRepository = BudgetRepository()
+    val budgetViewModel: BudgetViewModel = viewModel(
+        factory = BudgetViewModel.Factory(budgetRepository)
+    )
+
 
     AIBudgetAppTheme {
         Scaffold(
@@ -91,7 +105,7 @@ fun ScreenContainer(
                             },
                             onNavigateUploads = { screenContainerViewModel.navigateTo(Screen.UPLOADED_RECEIPTS) },
                             onNavigateReminders = { screenContainerViewModel.navigateTo(Screen.REMINDERS) },
-                          
+                            onNavigateExport = { screenContainerViewModel.navigateTo(Screen.EXPORT_DATA) },
                             onLogout = {
                                 screenContainerViewModel.navigateTo(Screen.HOME)
                                 onLogout()
@@ -138,6 +152,13 @@ fun ScreenContainer(
                     Screen.UPLOADED_RECEIPTS -> UploadedReceiptsScreen(
                         transactions = addTransactionViewModel.transactions
                     )
+
+                    Screen.EXPORT_DATA -> ExportReportScreen(
+                        transactions = addTransactionViewModel.transactions,
+                        budgets = budgetViewModel.budgets,
+                        fetchBudgets = { budgetViewModel.fetchBudgets() }
+                    )
+
                 }
             }
         }
