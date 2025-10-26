@@ -31,11 +31,10 @@ fun ExportReportScreen(
     val budgetsByPeriod = budgets.filter { it.chosenType.equals(selectedPeriod, ignoreCase = true) }
     val now = LocalDate.now()
 
-    //Notification trigger
     LaunchedEffect(budgets) {
+        val now = LocalDate.now()
         budgets.forEach { budget ->
-            val end = budget.endDate?.takeIf { it.isNotBlank() }
-            val endDate = runCatching { end?.let { LocalDate.parse(it) } }.getOrNull()
+            val endDate = runCatching { budget.endDate?.let { LocalDate.parse(it) } }.getOrNull()
             if (endDate != null && !endDate.isAfter(now)) {
                 if (NotificationLog.getAll(context).none { it.periodId == budget.id }) {
                     NotificationLog.log(
@@ -55,6 +54,8 @@ fun ExportReportScreen(
             }
         }
     }
+
+
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Budget Reports", style = MaterialTheme.typography.titleLarge)
