@@ -20,11 +20,13 @@ import kotlin.math.min
 @Composable
 fun BudgetScreen(
     onBackClick: () -> Unit = {},
+    budgetToEdit: Budget? = null
 ) {
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
     val budgetError by remember { derivedStateOf { budgetViewModel.budgetError } }
     val errorMessage by remember { derivedStateOf { budgetViewModel.errorMessage } }
     val budgetSuccess by remember { derivedStateOf { budgetViewModel.budgetSuccess } }
+    val isEditMode = budgetToEdit != null
 
     // form states
     var name by remember { mutableStateOf("") }
@@ -95,7 +97,7 @@ fun BudgetScreen(
             }
             Spacer(modifier = Modifier.width(75.dp))
             Text(
-                text = "New Budget",
+                text = if (isEditMode) "Edit Budget" else "New Budget",
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -267,21 +269,35 @@ fun BudgetScreen(
                 val categoryForSave: String? =
                     if (chosenType == "Yearly") null else chosenCategory
 
-                budgetViewModel.onAddBudget(
-                    name,
-                    chosenType,
-                    categoryForSave ?: "",   // <-- if function requires String; safe fallback
-                    amount,
-                    checked,
-                    startDate,
-                    endDate
-                )
+                if (isEditMode){
+                    val updatedbudget = budgetToEdit!!.copy(
+                        name = name,
+                        chosenType = chosenType,
+                        chosenCategory = categoryForSave,
+                        amount = amount,
+                        checked = checked,
+                        startDate = startDate,
+                        endDate = endDate
+                    )
+                    budgetViewModel.updateBudget(updatedbudget)
+                } else {
+
+                    budgetViewModel.onAddBudget(
+                        name,
+                        chosenType,
+                        categoryForSave ?: "",   // <-- if function requires String; safe fallback
+                        amount,
+                        checked,
+                        startDate,
+                        endDate
+                    )
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         ) {
-            Text("Save")
+            Text(if (isEditMode) "Update" else "Save")
         }
 
 
@@ -299,7 +315,7 @@ fun BudgetScreen(
             name = ""
             amount = 0.0
             Text(
-                "Budget Successfully Created",
+                if (isEditMode) "Budget Successfully Updated" else "Budget Successfully Created",
                 color = Color.Green,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(8.dp),

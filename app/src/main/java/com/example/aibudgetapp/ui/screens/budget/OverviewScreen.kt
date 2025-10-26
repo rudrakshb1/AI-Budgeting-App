@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SearchBar
@@ -30,6 +31,7 @@ fun OverviewScreen(
     placeholder: @Composable () -> Unit = { Text("Search") },
     leadingIcon: @Composable (() -> Unit)? = { Icon(Icons.Default.Search, contentDescription = "Search") },
     trailingIcon: @Composable (() -> Unit)? = null,
+    onEditBudget: (Budget) -> Unit = {}
 )
 {
     val budgetViewModel = remember { BudgetViewModel(BudgetRepository()) }
@@ -37,6 +39,8 @@ fun OverviewScreen(
     val filteredBudget = budgetViewModel.filteredBudget
     val loading = budgetViewModel.isLoading
     var query by remember { mutableStateOf("") }
+    var budgetToEdit by remember { mutableStateOf<Budget?>(null) }
+
 
     LaunchedEffect(budgetViewModel) {
         budgetViewModel.fetchBudgets()
@@ -87,10 +91,14 @@ fun OverviewScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
         ) {
             items(filteredBudget) { b ->
-                BudgetItemCard(b)
-                TextButton(onClick = { budgetViewModel.deleteBudget(b.id) }) {
-                    Text("Delete")
-                }
+                BudgetItemCard(b,
+                    onEdit = { budget ->
+                        onEditBudget(budget)
+                    },
+                    onDelete = { id ->
+                        budgetViewModel.deleteBudget(id)
+                    }
+                )
             }
         }
     }
