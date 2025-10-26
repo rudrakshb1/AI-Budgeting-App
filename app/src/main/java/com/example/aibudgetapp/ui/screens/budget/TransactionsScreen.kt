@@ -1,5 +1,6 @@
 package com.example.aibudgetapp.ui.screens.budget
 
+import android.R.attr.query
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,12 +9,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -22,18 +26,28 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionsScreen(viewModel: AddTransactionViewModel) {
+fun TransactionsScreen(
+    viewModel: AddTransactionViewModel,
+    placeholder: @Composable () -> Unit = { Text("Search") },
+    leadingIcon: @Composable (() -> Unit)? = { Icon(Icons.Default.Search, contentDescription = "Search") },
+    trailingIcon: @Composable (() -> Unit)? = null,) {
+
     LaunchedEffect(viewModel) {
         viewModel.fetchTransactions()
     }
 
-    val txList = viewModel.transactions
     val loading = viewModel.isLoading
     val transactionError by remember { derivedStateOf { viewModel.transactionError } }
     var currentmonth by remember { mutableStateOf(LocalDate.now()) }
     var showFullReceiptUrl by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    var query by remember { mutableStateOf("") }
+    LaunchedEffect(query) {
+        viewModel.filterTransaction(query)
+    }
+    val txList = if (query.isNotBlank()) viewModel.filteredTransaction else viewModel.transactions
 
     val calTransaction = txList.filter { tx ->
         if (tx.date.isNullOrBlank()) return@filter false
@@ -48,6 +62,28 @@ fun TransactionsScreen(viewModel: AddTransactionViewModel) {
     Column {
         Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
+
+        SearchBar(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics{traversalIndex = 0f},
+            inputField = {
+                SearchBarDefaults.InputField(
+                    query = query,
+                    onQueryChange = {
+                        query = it
+                    },
+                    onSearch = { },
+                    expanded = false,
+                    onExpandedChange = { },
+                    placeholder = placeholder,
+                    leadingIcon = leadingIcon,
+                    trailingIcon = trailingIcon,
+                )
+            },
+            expanded = false,
+            onExpandedChange = { },
+        ) { }
 
         Row(
             modifier = Modifier
