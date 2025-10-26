@@ -174,10 +174,15 @@ fun AddTransactionScreen(
                                 }
                             }
                             .addOnFailureListener {
-                                // Handle error
+
                             }
                     } else {
-                        addTransactionViewModel.onSaveTransaction(selected, null)
+                        addTransactionViewModel.onAddTransaction(
+                            description = "",
+                            amount = amount,
+                            category = selected,
+                            date = transactionDate
+                        )
                     }
                 },
                 modifier = Modifier

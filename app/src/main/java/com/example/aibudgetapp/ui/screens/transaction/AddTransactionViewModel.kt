@@ -64,7 +64,7 @@ class AddTransactionViewModel(
     val spendingByCategory: StateFlow<Map<String, Double>> = _spendingByCategory
 
     init {
-        fetchTransactions()   // automatically load when ViewModel is created
+        fetchTransactions()
     }
 
 
@@ -84,7 +84,7 @@ class AddTransactionViewModel(
             null
         }
     }
-    // --- END NEW FUNCTION ---
+
 
     // Call this whenever transaction list changes
     fun updateSpendingByCategory() {
@@ -133,7 +133,6 @@ class AddTransactionViewModel(
     fun onAmountChange(input: String) { amount = input.toDoubleOrNull() ?: 0.0 }
     fun onCategoryChange(value: String) { category = value }
 
-    // UPDATED: save chosen image locally
     fun onReceiptSelected(uri: Uri, context: Context) {
         val localPath = saveImageToInternalStorage(context, uri)
         receiptUri = localPath
@@ -172,7 +171,7 @@ class AddTransactionViewModel(
             onSuccess = {
                 Log.d("Add_Transaction", "Successfully saved: $t")
                 fetchTransactions()
-                updateSpendingByCategory()
+                updateSpendingByCategory() // NEW: call update after every change
                 transactionSuccess = true
             },
             onFailure = { e ->
@@ -181,6 +180,7 @@ class AddTransactionViewModel(
             }
         )
     }
+
 
     fun runOcr(uri: Uri, context: Context) {
         viewModelScope.launch {

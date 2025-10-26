@@ -162,15 +162,15 @@ class BudgetRepository {
         )
         sanitized.chosenCategory?.let { map["chosencategory"] = it }
 
-        userBudgetsRef(
-            onReady = { ref ->
-                ref.document(sanitized.id)
-                    .set(map)
-                    .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener(onFailure)
-            },
+        withBudgetsRef(
             onError = onFailure
-        )
+        ) { ref ->
+            ref.document(sanitized.id)
+                .set(map)
+                .addOnSuccessListener { onSuccess() }
+                .addOnFailureListener(onFailure)
+        }
+
     }
 
     /**
