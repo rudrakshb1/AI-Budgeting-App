@@ -22,9 +22,7 @@ import com.example.aibudgetapp.ui.screens.settings.SettingsViewModel
 import com.example.aibudgetapp.notifications.NotificationsScreen
 import com.example.aibudgetapp.ui.screens.registration.RegistrationViewModel
 import com.example.aibudgetapp.ui.screens.settings.RemindersScreen
-import androidx.compose.runtime.remember
-//import com.example.aibudgetapp.BuildConfig
-import com.example.aibudgetapp.BuildConfig
+import com.example.aibudgetapp.ui.screens.settings.UploadedReceiptsScreen
 
 
 
@@ -39,6 +37,7 @@ sealed class Screen {
     object CHATBOT : Screen()
     object NOTIFICATIONS : Screen()
     object REMINDERS : Screen()
+    object UPLOADED_RECEIPTS : Screen()
 }
 
 @Composable
@@ -90,7 +89,7 @@ fun ScreenContainer(
                             onEditProfilePhoto = { newPhoto ->
                                 settingsViewModel.onEditProfilePhoto(newPhoto)
                             },
-                         
+                            onNavigateUploads = { screenContainerViewModel.navigateTo(Screen.UPLOADED_RECEIPTS) },
                             onNavigateReminders = { screenContainerViewModel.navigateTo(Screen.REMINDERS) },
                           
                             onLogout = {
@@ -135,6 +134,9 @@ fun ScreenContainer(
                     Screen.REMINDERS -> RemindersScreen(
                         onBack = { screenContainerViewModel.navigateTo(Screen.SETTINGS) },
                         onToggleChanged = { /* hook to ThresholdNotifier in next step */ }
+                    )
+                    Screen.UPLOADED_RECEIPTS -> UploadedReceiptsScreen(
+                        transactions = addTransactionViewModel.transactions
                     )
                 }
             }
