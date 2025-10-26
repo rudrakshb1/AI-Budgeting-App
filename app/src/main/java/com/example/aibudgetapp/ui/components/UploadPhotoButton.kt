@@ -96,7 +96,7 @@ fun UploadPhotoButton(
     fun launchCrop(source: Uri) { ... }
     */
 
-    // --- Gallery picker triggers OCR and save directly (no crop)
+    // Gallery picker triggers OCR and save directly (no crop)
     val galleryPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->

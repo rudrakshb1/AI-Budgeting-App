@@ -9,5 +9,6 @@ data class Transaction(
     val balance: Double? = null,    // for bank statements
     var category: String = "",      // filled by user (never Uncategorized now)
     var date: String = "",
-    val merchant: String = ""       // for receipts
+    val merchant: String = "",     // for receipts
+    val receiptUrl: String? = null
 )

@@ -21,12 +21,17 @@ import android.app.Activity
 import com.example.aibudgetapp.constants.CategoryType
 import kotlin.math.floor
 import kotlin.math.min
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
+
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
-    onReceiptPicked: (Uri) -> Unit = {}     // new parameter
+    onReceiptPicked: (Uri) -> Unit = {}
 ) {
     val addTransactionViewModel = remember { AddTransactionViewModel(TransactionRepository()) }
     val transactionError by remember { derivedStateOf { addTransactionViewModel.transactionError } }
@@ -43,8 +48,10 @@ fun AddTransactionScreen(
     var isSelectedCategory by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val storage = FirebaseStorage.getInstance()
+    val storageRef = storage.reference.child("receipts/${UUID.randomUUID()}")
 
-    // --- UCrop Launcher at screen level! ---
+    //UCrop Launcher at screen level!
     val cropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
@@ -79,7 +86,7 @@ fun AddTransactionScreen(
         UploadPhotoButton(
             onImagePicked = { uri ->
                 // addTransactionViewModel.onReceiptSelected(uri)
-                onReceiptPicked(uri)                               // ✅ navigate to ReceiptFlow
+                onReceiptPicked(uri)
                 receiptUri = uri
             },
             addTxViewModel = addTransactionViewModel
@@ -153,16 +160,30 @@ fun AddTransactionScreen(
             )
         }
 
-        // ✅ Only show manual add flow if no OCR result is waiting
+        //Only show manual add flow if no OCR result is waiting
         if (addTransactionViewModel.ocrResult == null) {
             Button(
                 onClick = {
-                    addTransactionViewModel.onAddTransaction(
-                        description = "",
-                        amount = amount,
-                        category = selected,
-                        date = transactionDate
-                    )
+                    if (receiptUri != null) {
+                        val storage = FirebaseStorage.getInstance()
+                        val storageRef = storage.reference.child("receipts/${UUID.randomUUID()}")
+                        storageRef.putFile(receiptUri!!)
+                            .addOnSuccessListener {
+                                storageRef.downloadUrl.addOnSuccessListener { uri ->
+                                    addTransactionViewModel.onSaveTransaction(selected, uri.toString())
+                                }
+                            }
+                            .addOnFailureListener {
+
+                            }
+                    } else {
+                        addTransactionViewModel.onAddTransaction(
+                            description = "",
+                            amount = amount,
+                            category = selected,
+                            date = transactionDate
+                        )
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,6 +191,7 @@ fun AddTransactionScreen(
             ) {
                 Text("Save")
             }
+
 
             if (transactionError) {
                 Text(

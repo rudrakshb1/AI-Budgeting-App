@@ -25,15 +25,34 @@ android {
             if (f.exists()) f.inputStream().use { load(it) }
         }
 
+        // Safe getters
+        fun prop(name: String): String = localProps.getProperty(name) ?: ""
+
+        // Return a proper Java string literal, even if empty, and escape quotes if any.
+        fun asJavaStringLiteral(value: String): String =
+            "\"" + value.replace("\"", "\\\"") + "\""
+
+        val cloudName = localProps.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""
+        val unsignedPreset = localProps.getProperty("CLOUDINARY_UNSIGNED_PRESET") ?: ""
+
         val geminiKeyProvider  = provider { localProps.getProperty("GEMINI_API_KEY") ?: "" }
         val geminiKey = geminiKeyProvider.getOrElse("")
         if (geminiKey.isBlank()) {
-            logger.warn("GEMINI_API_KEY is blank — check gradle.properties or env var")
+            logger.warn("GEMINI_API_KEY is blank — check local.properties")
         }
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+
+
+
+
+
     }
 
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -140,5 +159,14 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:1.7.3")
     testImplementation("org.robolectric:robolectric:4.12.2")
+    implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+
 
 }
