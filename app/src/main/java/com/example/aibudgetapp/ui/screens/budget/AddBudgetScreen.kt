@@ -12,6 +12,7 @@ import com.example.aibudgetapp.constants.CategoryType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.temporal.ChronoUnit
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -29,17 +30,17 @@ fun BudgetScreen(
     val isEditMode = budgetToEdit != null
 
     // form states
-    var name by remember { mutableStateOf("") }
-    var recursion by remember { mutableStateOf(1) }
-    var amount by remember { mutableStateOf(0.0) }
+    var name by remember { mutableStateOf(budgetToEdit?.name ?: "") }
+    var recursion by remember { mutableStateOf(inferRecursion(budgetToEdit?.startDate, budgetToEdit?.endDate, budgetToEdit?.chosenType) ?: 1) }
+    var amount by remember { mutableStateOf(budgetToEdit?.amount ?: 0.0) }
     val type = listOf("Weekly", "Monthly", "Yearly")
-    var chosenType by remember { mutableStateOf(type[0]) }
+    var chosenType by remember { mutableStateOf(budgetToEdit?.chosenType ?: type[0]) }
     val categories = CategoryType.entries.map { it.value }
-    var chosenCategory by remember { mutableStateOf(categories[0]) }
+    var chosenCategory by remember { mutableStateOf(budgetToEdit?.chosenCategory ?: categories[0]) }
     var isTypeExpanded by remember { mutableStateOf(false) }
     var isCategoryExpanded by remember { mutableStateOf(false) }
-    var checked by remember { mutableStateOf(true) }
-    var startDate by remember { mutableStateOf(LocalDate.now().toString()) }
+    var checked by remember { mutableStateOf(budgetToEdit?.checked ?: true) }
+    var startDate by remember { mutableStateOf(budgetToEdit?.startDate ?: LocalDate.now().toString()) }
     var isManualCategory by remember { mutableStateOf(false) }
 
     // Auto-calculate end date whenever start/type changes
@@ -320,6 +321,59 @@ fun BudgetScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(8.dp),
             )
+        }
+    }
+}
+
+fun inferRecursion(
+    startDate: String?,
+    endDate: String?,
+    chosenType: String?
+): Int? {
+    if(startDate == null || endDate == null || chosenType == null)
+        return null
+    val fmt = DateTimeFormatter.ofPattern("yyyy-M-d")
+    val start = runCatching { LocalDate.parse(startDate.trim(), fmt) }.getOrNull() ?: return null
+    val end   = runCatching { LocalDate.parse(endDate.trim(), fmt) }.getOrNull() ?: return null
+
+    if (end.isBefore(start)) return null
+    if (end.isEqual(start)) return 0
+
+    return when {
+        chosenType.equals("Weekly", ignoreCase = true) -> {
+            // end = start + (7 * r - 1) days
+            val days = ChronoUnit.DAYS.between(start, end) // >= 1
+            val numerator = days + 1
+            if (numerator % 7L == 0L) (numerator / 7L).toInt() else null
+        }
+
+        chosenType.equals("Yearly", ignoreCase = true) -> {
+            // Try rule A: end == start.plusYears(r) - 1 day (when same day exists)
+            // Try rule B: end == start.plusYears(r)      (when same day doesn't exist)
+            // We can detect r by testing both candidates.
+
+            // Candidate A: if end + 1 day lands exactly on start.plusYears(r)
+            val rA = ChronoUnit.YEARS.between(start, end.plusDays(1))
+            if (start.plusYears(rA) == end.plusDays(1)) return rA.toInt()
+
+            // Candidate B: direct match without the minus-one rule
+            val rB = ChronoUnit.YEARS.between(start, end)
+            if (start.plusYears(rB) == end) return rB.toInt()
+
+            null
+        }
+
+        else -> {
+            // Monthly (default)
+            // Candidate A: end == start.plusMonths(r) - 1 day (when same day exists)
+            val rA = ChronoUnit.MONTHS.between(start, end.plusDays(1))
+            if (start.plusMonths(rA) == end.plusDays(1)) return rA.toInt()
+
+            // Candidate B: end == start.plusMonths(r) (when same day doesn't exist)
+            val rB = ChronoUnit.MONTHS.between(start, end)
+            if (start.plusMonths(rB) == end) return rB.toInt()
+
+            null
         }
     }
 }
