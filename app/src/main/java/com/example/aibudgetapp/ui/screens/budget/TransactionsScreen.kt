@@ -1,7 +1,5 @@
 package com.example.aibudgetapp.ui.screens.budget
 
-
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.example.aibudgetapp.ui.screens.transaction.ReceiptLink
 
 @Composable
 fun TransactionsScreen(viewModel: AddTransactionViewModel) { // <-- Passed from parent!
@@ -115,6 +114,9 @@ fun TransactionsScreen(viewModel: AddTransactionViewModel) { // <-- Passed from 
                 items(calTransaction) { tx ->
                     val date = tx.date?.takeIf { it.isNotBlank() }?.plus(" : ") ?: ""
                     Text("${date}${tx.description} - ${tx.amount} (${tx.category})")
+                    if (tx.receiptUrl != null && tx.receiptUrl!!.isNotBlank()) {
+                        ReceiptLink(url = tx.receiptUrl!!)   // opens the image; label shows filename
+                    }
                     TextButton(onClick = { viewModel.deleteTransaction(tx.id) }) {
                         Text("Delete")
                     }

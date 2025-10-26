@@ -22,7 +22,7 @@ fun ReceiptFlowScreen(
 ) {
     val ocrResult = addTransactionViewModel.ocrResult
     val showCategoryDialog = addTransactionViewModel.showCategoryDialog
-    val transactionSaved = addTransactionViewModel.transactionSaved // <-- ADD THIS
+    val transactionSaved = addTransactionViewModel.transactionSaved
     val context = LocalContext.current
 
     // Launch OCR job via ViewModel (lifecycle-safe)
@@ -45,10 +45,14 @@ fun ReceiptFlowScreen(
             date = ocrResult.dateEpochMs,
             addTransactionViewModel = addTransactionViewModel,
             onSaveComplete = { selectedCategory ->
-                addTransactionViewModel.onSaveTransaction(selectedCategory, imageUri)
+                addTransactionViewModel.onSaveTransactionWithImage(
+                    category = selectedCategory,
+                    imageUri = imageUri
+                )
                 Toast.makeText(context, "Transaction saved!", Toast.LENGTH_SHORT).show()
                 onComplete()
             }
+
         )
     } else {
         ReceiptOcrScreen()

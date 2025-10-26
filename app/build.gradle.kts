@@ -140,5 +140,9 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:1.7.3")
     testImplementation("org.robolectric:robolectric:4.12.2")
-
+    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }

@@ -1,7 +1,5 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
-
-
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -139,6 +137,47 @@ class AddTransactionViewModel(
         showCategoryDialog = false
         ocrResult = null
     }
+
+    fun onSaveTransactionWithImage(category: String, imageUri: Uri) {
+        if (transactionSaved) {
+            Log.w("DUPLICATE_CHECK", "Blocked duplicate save")
+            return
+        }
+        transactionSaved = true
+        Log.d("DUPLICATE_CHECK", "Saving transaction with image")
+        // ADD
+        ocrResult?.let { parsed ->
+            val transaction = Transaction(
+                id = "",
+                description = parsed.merchant.ifBlank { "Unknown" },
+                amount = parsed.total,
+                category = category,
+                date = LocalDate.now().toString()
+            )
+            // Use the new repo helper that uploads and then patches receiptUrl
+            repository.addTransactionWithImage(
+                imageUri = imageUri,
+                transaction = transaction,
+                onSuccess = {
+                    Log.d("Add_Transaction", "Saved with image")
+                    fetchTransactions()
+                    updateSpendingByCategory()
+                    transactionSuccess = true
+                    showCategoryDialog = false
+                    ocrResult = null
+                },
+                onFailure = { e ->
+                    Log.e("Add_Transaction", "Save with image failed: $e")
+                    transactionError = true
+                    transactionSaved = false
+                }
+            )
+        } ?: run {
+            Log.w("Add_Transaction", "No OCR result; nothing to save")
+            transactionSaved = false
+        }
+    }
+
 
 
     fun addTransaction(t: Transaction) {

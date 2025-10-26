@@ -23,6 +23,8 @@ import kotlin.math.floor
 import kotlin.math.min
 
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
@@ -44,7 +46,7 @@ fun AddTransactionScreen(
 
     val context = LocalContext.current
 
-    // --- UCrop Launcher at screen level! ---
+    //UCrop Launcher at screen level!
     val cropLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
@@ -153,7 +155,7 @@ fun AddTransactionScreen(
             )
         }
 
-        // ✅ Only show manual add flow if no OCR result is waiting
+        //Only show manual add flow if no OCR result is waiting
         if (addTransactionViewModel.ocrResult == null) {
             Button(
                 onClick = {
