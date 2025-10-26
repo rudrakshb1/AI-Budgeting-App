@@ -14,13 +14,16 @@ import kotlinx.coroutines.launch
 import android.content.Context
 import com.example.aibudgetapp.constants.CategoryType
 import com.example.aibudgetapp.ocr.ReceiptOcr
+import com.example.aibudgetapp.ui.screens.budget.Budget
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.checkerframework.checker.units.qual.s
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale.filter
 
 enum class Period { WEEK, MONTH }
 
@@ -57,6 +60,8 @@ class AddTransactionViewModel(
         private set
 
     var selectedPeriod: Period by mutableStateOf(Period.WEEK)
+        private set
+    var filteredTransaction by mutableStateOf<List<Transaction>>(emptyList())
         private set
 
 
@@ -254,6 +259,7 @@ class AddTransactionViewModel(
             onSuccess = { list ->
                 transactions = list
                 updateSpendingByCategory()
+                filterTransaction("")
                 isLoading = false
             },
             onFailure = { e ->
@@ -261,6 +267,21 @@ class AddTransactionViewModel(
                 transactionError = true
             }
         )
+    }
+
+    fun filterTransaction(searchText: String) {
+        filteredTransaction = transactions
+            .filter { t ->
+                if (searchText.isBlank()) {
+                    true
+                } else {
+                    t.category.contains(searchText, ignoreCase = true) ||
+                            t.description.contains(searchText, ignoreCase = true) ||
+                            t.date.contains(searchText, ignoreCase = true) ||
+                            t.amount.toString().contains(searchText, ignoreCase = true)
+                }
+            }
+            .sortedByDescending { it.date }
     }
 
     fun addFromOcr(merchant: String, total: Double, rawText: String, imageUri: Uri) {
