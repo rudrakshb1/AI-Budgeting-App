@@ -2,6 +2,8 @@ package com.example.aibudgetapp.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -16,8 +18,6 @@ import com.example.aibudgetapp.notifications.NotificationEvent
 import java.time.temporal.ChronoUnit
 
 enum class ReportPeriod { WEEK, MONTH, YEAR }
-
-
 
 private fun parseLocalDateOrNull(s: String?): LocalDate? =
     try { if (s.isNullOrBlank()) null else LocalDate.parse(s) } catch (_: Exception) { null }
@@ -41,7 +41,6 @@ private fun periodsFor(type: String?, start: String?, end: String?): Int {
     }
 }
 
-
 @Composable
 fun ExportReportScreen(
     transactions: List<Transaction>,
@@ -56,7 +55,6 @@ fun ExportReportScreen(
     val context = LocalContext.current
     val budgetsByPeriod = budgets.filter { it.chosenType.equals(selectedPeriod, ignoreCase = true) }
     val now = LocalDate.now()
-
 
     LaunchedEffect(budgets) {
         val now = LocalDate.now()
@@ -82,80 +80,74 @@ fun ExportReportScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Budget Reports", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(16.dp))
+    LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            Text("Budget Reports", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(16.dp))
 
-        // Period picker
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            periodOptions.forEach { period ->
-                FilterChip(
-                    selected = selectedPeriod.equals(period, ignoreCase = true),
-                    onClick = { selectedPeriod = period },
-                    label = { Text(period) },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-
-        Button(onClick = {
-
-            val csv = buildString {
-                append("Period: $selectedPeriod\n\n")
-                budgetsByPeriod.forEach { budget ->
-                    val unit = unitFor(budget.chosenType)
-                    val n = periodsFor(budget.chosenType, budget.startDate, budget.endDate)
-                    val totalBudget = budget.amount * n
-
-                    append("Budget: ${budget.name} (${budget.chosenType})\n")
-                    if (!budget.chosenType.equals("Yearly", true) && !budget.chosenCategory.isNullOrBlank())
-                        append("Category: ${budget.chosenCategory}\n")
-                    append("From: ${budget.startDate} To: ${budget.endDate}\n")
-                    append("Budget: $${"%.2f".format(budget.amount)} per $unit (Total: $${"%.2f".format(totalBudget)} for $n ${if (n==1) unit else "${unit}s"})\n")
-
-                    val budgetTxns = transactions.filter { tx ->
-                        val txDate = try { LocalDate.parse(tx.date) } catch (_: Exception) { null }
-                        val inRange = txDate != null &&
-                                (budget.startDate == null || !txDate.isBefore(LocalDate.parse(budget.startDate))) &&
-                                (budget.endDate == null || !txDate.isAfter(LocalDate.parse(budget.endDate)))
-                        inRange && (
-                                budget.chosenType.equals("Yearly", ignoreCase = true)
-                                        || tx.category == budget.chosenCategory
-                                )
-                    }
-                    val spent = budgetTxns.sumOf { it.amount ?: 0.0 }
-                    val delta = totalBudget - spent
-                    append("Total spending: $${"%.2f".format(spent)} (in budget period)\n")
-                    if (delta >= 0) append("Remaining: $${"%.2f".format(delta)}\n")
-                    else append("Over by: $${"%.2f".format(-delta)}\n")
-
-                    append("Transactions:\n")
-                    budgetTxns.forEach { tx ->
-                        append("- ${tx.date}: ${tx.description} (${tx.amount})\n")
-                    }
-                    append("\n")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                periodOptions.forEach { period ->
+                    FilterChip(
+                        selected = selectedPeriod.equals(period, ignoreCase = true),
+                        onClick = { selectedPeriod = period },
+                        label = { Text(period) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                 }
             }
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, csv)
-                putExtra(Intent.EXTRA_SUBJECT, "AI Budgeting App Report")
-                putExtra(Intent.EXTRA_EMAIL, arrayOf(""))
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = {
+                val csv = buildString {
+                    append("Period: $selectedPeriod\n\n")
+                    budgetsByPeriod.forEach { budget ->
+                        val unit = unitFor(budget.chosenType)
+                        val n = periodsFor(budget.chosenType, budget.startDate, budget.endDate)
+                        val totalBudget = budget.amount * n
+
+                        append("Budget: ${budget.name} (${budget.chosenType})\n")
+                        if (!budget.chosenType.equals("Yearly", true) && !budget.chosenCategory.isNullOrBlank())
+                            append("Category: ${budget.chosenCategory}\n")
+                        append("From: ${budget.startDate} To: ${budget.endDate}\n")
+                        append("Budget: $${"%.2f".format(budget.amount)} per $unit (Total: $${"%.2f".format(totalBudget)} for $n ${if (n==1) unit else "${unit}s"})\n")
+
+                        val budgetTxns = transactions.filter { tx ->
+                            val txDate = try { LocalDate.parse(tx.date) } catch (_: Exception) { null }
+                            val inRange = txDate != null &&
+                                    (budget.startDate == null || !txDate.isBefore(LocalDate.parse(budget.startDate))) &&
+                                    (budget.endDate == null || !txDate.isAfter(LocalDate.parse(budget.endDate)))
+                            inRange && (
+                                    budget.chosenType.equals("Yearly", ignoreCase = true)
+                                            || tx.category == budget.chosenCategory
+                                    )
+                        }
+                        val spent = budgetTxns.sumOf { it.amount ?: 0.0 }
+                        val delta = totalBudget - spent
+                        append("Total spending: $${"%.2f".format(spent)} (in budget period)\n")
+                        if (delta >= 0) append("Remaining: $${"%.2f".format(delta)}\n")
+                        else append("Over by: $${"%.2f".format(-delta)}\n")
+
+                        append("Transactions:\n")
+                        budgetTxns.forEach { tx ->
+                            append("- ${tx.date}: ${tx.description} (${tx.amount})\n")
+                        }
+                        append("\n")
+                    }
+                }
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, csv)
+                    putExtra(Intent.EXTRA_SUBJECT, "AI Budgeting App Report")
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf(""))
+                }
+                context.startActivity(Intent.createChooser(intent, "Share Report"))
+            }) {
+                Text("Share/Download Report")
             }
-            context.startActivity(Intent.createChooser(intent, "Share Report"))
-
-
-        }) {
-            Text("Share/Download Report")
+            if (budgetsByPeriod.isEmpty()) {
+                Text("No $selectedPeriod budgets found.")
+            }
         }
-
-        if (budgetsByPeriod.isEmpty()) {
-            Text("No $selectedPeriod budgets found.")
-            return
-        }
-
-        budgetsByPeriod.forEach { budget ->
+        items(budgetsByPeriod) { budget ->
             val start = budget.startDate?.takeIf { it.isNotBlank() }
             val end = budget.endDate?.takeIf { it.isNotBlank() }
             val unit = unitFor(budget.chosenType)
@@ -203,7 +195,6 @@ fun ExportReportScreen(
                     else
                         budgetTxns.forEach { tx ->
                             Text("${tx.date} - ${tx.description}: ${tx.amount}", style = MaterialTheme.typography.bodySmall)
-
                         }
                 }
             }
