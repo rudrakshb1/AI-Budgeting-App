@@ -21,6 +21,11 @@ import com.example.aibudgetapp.ui.theme.ThemeController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.UUID
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.aibudgetapp.ui.screens.settings.ChangePasswordScreen
+import com.google.firebase.auth.EmailAuthProvider
 
 
 class MainActivity : ComponentActivity() {
@@ -62,10 +67,45 @@ class MainActivity : ComponentActivity() {
                                 factory = SettingsViewModelFactory(repo)
                             )
 
-                        ScreenContainer(
-                            settingsViewModel = settingsViewModel,
-                            onLogout = { loginViewModel.logout() }
-                        )
+                        val navController = rememberNavController()
+                        NavHost(navController = navController, startDestination = "app") {
+
+                            composable("app") {
+                                ScreenContainer(
+                                    settingsViewModel = settingsViewModel,
+                                    onLogout = { loginViewModel.logout() },
+                                    onNavigatePasscode = { navController.navigate("change-password") }
+                                )
+                            }
+
+                            composable("change-password") {
+                                ChangePasswordScreen(
+                                    onBack = { navController.popBackStack() },
+                                    onPasswordChanged = { currentPassword, newPassword, onResult ->
+                                        val user = FirebaseAuth.getInstance().currentUser
+                                        val email = user?.email
+                                        if (user == null || email.isNullOrBlank()) {
+                                            onResult(false, "No signed-in user.")
+                                            return@ChangePasswordScreen
+                                        }
+                                        val cred = EmailAuthProvider.getCredential(email, currentPassword)
+                                        user.reauthenticate(cred)
+                                            .addOnSuccessListener {
+                                                user.updatePassword(newPassword)
+                                                    .addOnSuccessListener {
+                                                        onResult(true, "Password updated.")
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        onResult(false, e.localizedMessage ?: "Update failed.")
+                                                    }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                onResult(false, e.localizedMessage ?: "Reauthentication failed.")
+                                            }
+                                    }
+                                )
+                            }
+                        }
                     } else if (showRegister) {
                         RegistrationScreen(
                             onRegister = { email, password, fn, ln -> registrationViewModel.register(email, password, fn, ln) },

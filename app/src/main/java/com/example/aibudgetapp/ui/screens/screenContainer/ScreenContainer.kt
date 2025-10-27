@@ -51,7 +51,8 @@ sealed class Screen {
 @Composable
 fun ScreenContainer(
     settingsViewModel: SettingsViewModel,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigatePasscode: () -> Unit
 ) {
     val screenContainerViewModel: ScreenContainerViewModel = viewModel()
 
@@ -104,6 +105,7 @@ fun ScreenContainer(
                                 settingsViewModel.onEditProfilePhoto(newPhoto)
                             },
                             onNavigateUploads = { screenContainerViewModel.navigateTo(Screen.UPLOADED_RECEIPTS) },
+                            onNavigatePasscode = onNavigatePasscode,
                             onNavigateReminders = { screenContainerViewModel.navigateTo(Screen.REMINDERS) },
                             onNavigateExport = { screenContainerViewModel.navigateTo(Screen.EXPORT_DATA) },
                             onLogout = {
