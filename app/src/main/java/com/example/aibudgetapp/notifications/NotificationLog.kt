@@ -100,7 +100,7 @@ object NotificationLog {
         return removed
     }
 
-    // NEW — Clear all notifications
+    //Clear all notifications
     fun clearAll(ctx: Context) {
         writeArray(ctx, JSONArray())
     }
