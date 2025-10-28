@@ -26,8 +26,7 @@ import com.example.aibudgetapp.ui.screens.settings.UploadedReceiptsScreen
 import com.example.aibudgetapp.ui.screens.settings.ExportReportScreen
 import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
-
-
+import com.example.aibudgetapp.ui.screens.settings.FaqScreen
 
 
 sealed class Screen {
@@ -42,6 +41,8 @@ sealed class Screen {
     object REMINDERS : Screen()
     object UPLOADED_RECEIPTS : Screen()
     object EXPORT_DATA : Screen()
+    object FAQ : Screen()
+
 
 
 
@@ -97,6 +98,10 @@ fun ScreenContainer(
 
                     Screen.CHATBOT -> ChatbotScreen()
 
+                    Screen.FAQ -> FaqScreen(
+                        onBack = { screenContainerViewModel.navigateTo(Screen.SETTINGS) }
+                    )
+
                     Screen.SETTINGS -> {
                         // Repo + VM factory wiring for Settings
                         SettingsScreen(
@@ -106,6 +111,7 @@ fun ScreenContainer(
                             },
                             onNavigateUploads = { screenContainerViewModel.navigateTo(Screen.UPLOADED_RECEIPTS) },
                             onNavigatePasscode = onNavigatePasscode,
+                            onNavigateFaq = { screenContainerViewModel.navigateTo(Screen.FAQ) },
                             onNavigateReminders = { screenContainerViewModel.navigateTo(Screen.REMINDERS) },
                             onNavigateExport = { screenContainerViewModel.navigateTo(Screen.EXPORT_DATA) },
                             onLogout = {
