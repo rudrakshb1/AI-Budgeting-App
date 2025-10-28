@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.aibudgetapp.data.AccountRepository
-import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(

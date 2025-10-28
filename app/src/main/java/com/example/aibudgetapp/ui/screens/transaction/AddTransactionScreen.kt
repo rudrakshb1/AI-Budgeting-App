@@ -1,6 +1,5 @@
 package com.example.aibudgetapp.ui.screens.transaction
 
-
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -23,10 +22,6 @@ import kotlin.math.floor
 import kotlin.math.min
 import com.google.firebase.storage.FirebaseStorage
 import java.util.UUID
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

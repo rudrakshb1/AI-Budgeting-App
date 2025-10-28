@@ -13,7 +13,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.aibudgetapp.ui.screens.home.HomeScreen
 
 @Composable
 fun LoginScreen(

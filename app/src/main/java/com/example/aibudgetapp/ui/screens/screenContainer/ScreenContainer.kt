@@ -28,7 +28,6 @@ import com.example.aibudgetapp.ui.screens.budget.BudgetViewModel
 import com.example.aibudgetapp.ui.screens.budget.BudgetRepository
 import com.example.aibudgetapp.ui.screens.settings.FaqScreen
 
-
 sealed class Screen {
     object HOME : Screen()
     object ADDTRANSACTION : Screen()
@@ -42,11 +41,6 @@ sealed class Screen {
     object UPLOADED_RECEIPTS : Screen()
     object EXPORT_DATA : Screen()
     object FAQ : Screen()
-
-
-
-
-
 }
 
 @Composable
@@ -57,8 +51,6 @@ fun ScreenContainer(
 ) {
     val screenContainerViewModel: ScreenContainerViewModel = viewModel()
 
-
-
     // Use the Factory to create ViewModel with repo dependency
     val addTransactionViewModel: AddTransactionViewModel = viewModel(
         factory = AddTransactionViewModelFactory(TransactionRepository())
@@ -68,7 +60,6 @@ fun ScreenContainer(
     val budgetViewModel: BudgetViewModel = viewModel(
         factory = BudgetViewModel.Factory(budgetRepository)
     )
-
 
     AIBudgetAppTheme {
         Scaffold(
@@ -166,7 +157,6 @@ fun ScreenContainer(
                         budgets = budgetViewModel.budgets,
                         fetchBudgets = { budgetViewModel.fetchBudgets() }
                     )
-
                 }
             }
         }

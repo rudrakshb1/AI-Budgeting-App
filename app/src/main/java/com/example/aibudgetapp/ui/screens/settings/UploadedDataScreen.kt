@@ -12,7 +12,6 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.aibudgetapp.ui.screens.transaction.Transaction
 
-
 @Composable
 fun UploadedReceiptsScreen(transactions: List<Transaction>) {
     val allReceipts = transactions.mapNotNull { it.receiptUrl }.distinct()

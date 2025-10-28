@@ -9,7 +9,6 @@ import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModel
 import com.example.aibudgetapp.ui.screens.transaction.TransactionRepository
 import com.example.aibudgetapp.ui.screens.transaction.AddTransactionViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.tooling.preview.Preview
 
 enum class BudgetTab { OVERVIEW, SPENDING, TRANSACTIONS }

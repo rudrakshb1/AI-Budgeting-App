@@ -17,8 +17,6 @@ import com.example.aibudgetapp.notifications.NotificationLog
 import com.example.aibudgetapp.notifications.NotificationEvent
 import java.time.temporal.ChronoUnit
 
-enum class ReportPeriod { WEEK, MONTH, YEAR }
-
 private fun parseLocalDateOrNull(s: String?): LocalDate? =
     try { if (s.isNullOrBlank()) null else LocalDate.parse(s) } catch (_: Exception) { null }
 

@@ -115,8 +115,17 @@ class HomeViewModel(
     }
 
     /**
-     * Inclusive overlap between (s1..e1) and (s2..e2).
-     * NOTE: +1 day so both boundaries count (e.g., 1-day budget still contributes).
+     * Calculate inclusive overlap in days between two date ranges (s1..e1) and (s2..e2).
+     *
+     * Parameters:
+     * @param s1 start of first range (e.g., budget start)
+     * @param e1 end of first range   (e.g., budget end)
+     * @param s2 start of second range (e.g., current month start)
+     * @param e2 end of second range   (e.g., current month end)
+     *
+     * Returns:
+     *  - The number of overlapping days (inclusive of both boundaries).
+     *  - For example, a 1-day budget still counts as 1 day overlap.
      */
     private fun overlapDaysInclusive(
         s1: LocalDate, e1: LocalDate,

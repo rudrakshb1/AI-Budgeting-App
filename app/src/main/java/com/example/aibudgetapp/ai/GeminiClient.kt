@@ -2,7 +2,6 @@ package com.example.aibudgetapp.ai
 
 import android.util.Log
 import com.example.aibudgetapp.BuildConfig
-import com.example.aibudgetapp.constants.CategoryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull

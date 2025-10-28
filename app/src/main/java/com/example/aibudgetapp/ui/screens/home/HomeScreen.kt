@@ -313,44 +313,44 @@ fun HomeScreen(
                     .padding(16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                    Button(
-                        onClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) }
-                    ) { Text("+") }
-                }
+                Button(
+                    onClick = { screenContainerViewModel.navigateTo(Screen.ADDTRANSACTION) }
+                ) { Text("+") }
             }
         }
     }
+}
 
-        @Composable
-        fun Greeting(
-            name: String,
-            modifier: Modifier = Modifier,
-            badgeCount: Int = 0,
-            onBellClick: () -> Unit = {}
-        ) {
-            Row(
-                modifier = modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Welcome, $name!",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Start,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                BadgedBox(
-                    badge = {
-                        if (badgeCount > 0) {
-                            Badge { Text(badgeCount.coerceAtMost(9).toString()) }
-                        }
-                    }
-                ) {
-                    IconButton(onClick = onBellClick) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notifications"
-                        )
-                    }
+@Composable
+fun Greeting(
+    name: String,
+    modifier: Modifier = Modifier,
+    badgeCount: Int = 0,
+    onBellClick: () -> Unit = {}
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Welcome, $name!",
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Start,
+            style = MaterialTheme.typography.titleLarge
+        )
+        BadgedBox(
+            badge = {
+                if (badgeCount > 0) {
+                    Badge { Text(badgeCount.coerceAtMost(9).toString()) }
                 }
             }
+        ) {
+            IconButton(onClick = onBellClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifications"
+                )
+            }
         }
+    }
+}

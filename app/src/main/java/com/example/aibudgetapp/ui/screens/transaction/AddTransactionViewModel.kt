@@ -14,16 +14,13 @@ import kotlinx.coroutines.launch
 import android.content.Context
 import com.example.aibudgetapp.constants.CategoryType
 import com.example.aibudgetapp.ocr.ReceiptOcr
-import com.example.aibudgetapp.ui.screens.budget.Budget
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import org.checkerframework.checker.units.qual.s
 import java.io.File
 import java.io.FileOutputStream
-import java.util.Locale.filter
 
 enum class Period { WEEK, MONTH }
 

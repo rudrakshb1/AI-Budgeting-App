@@ -129,25 +129,25 @@ class RegistrationViewModel : ViewModel() {
 
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    handleAuthError(task.exception)
-                    return@addOnCompleteListener
-                }
+            if (!task.isSuccessful) {
+                handleAuthError(task.exception)
+                return@addOnCompleteListener
+            }
 
-                val user = task.result?.user ?: return@addOnCompleteListener
-                val display = if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
+            val user = task.result?.user ?: return@addOnCompleteListener
+            val display = if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
 
-                viewModelScope.launch {
-                    try {
-                        val repo = com.example.aibudgetapp.data.AccountRepository(
-                            auth = com.google.firebase.auth.FirebaseAuth.getInstance(),
-                            db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                        )
-                        repo.ensureUserProfileDoc(user, uid, display)
-                        Log.d("AddUser", "User added")
-                    } catch (_: Exception) {
-                    }
+            viewModelScope.launch {
+                try {
+                    val repo = com.example.aibudgetapp.data.AccountRepository(
+                        auth = com.google.firebase.auth.FirebaseAuth.getInstance(),
+                        db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    )
+                    repo.ensureUserProfileDoc(user, uid, display)
+                    Log.d("AddUser", "User added")
+                } catch (_: Exception) {
                 }
             }
+        }
     }
 }

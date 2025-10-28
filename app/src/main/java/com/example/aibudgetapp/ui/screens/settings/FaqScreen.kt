@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaqScreen(onBack: () -> Unit = {}) {

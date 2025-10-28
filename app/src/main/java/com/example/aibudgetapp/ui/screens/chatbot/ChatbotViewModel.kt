@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 data class ChatMessage(val text: String, val isUser: Boolean)
 data class ChatbotUiState(

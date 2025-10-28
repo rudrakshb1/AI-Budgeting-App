@@ -10,7 +10,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.example.aibudgetapp.R
 import java.util.Locale
 
 object ThresholdNotifier {
@@ -214,31 +213,4 @@ object ThresholdNotifier {
         Log.d(TAG, "post: posted system notification id=$id")
         return true
     }
-
-    /** Optional: clears the once-per-period latch for quick manual re-tests. */
-    fun resetThresholdState(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { clear() }
-        Log.d(TAG, "reset: cleared $PREFS")
-    }
-
-
-    //Yearly convenience wrappers (reuse the generic threshold logic)
-    fun backfillYearlyIfNeeded(
-        context: Context,
-        yearId: String,   // e.g. "2025"
-        spent: Double,
-        budget: Double
-    ) {
-        backfillIfNeeded(context, label = "Yearly", periodId = yearId, spent = spent, budget = budget)
-    }
-
-    fun maybeNotifyYearly(
-        context: Context,
-        yearId: String,   // e.g. "2025"
-        spent: Double,
-        budget: Double
-    ): Boolean {
-        return maybeNotifyCrossing(context, label = "Yearly", periodId = yearId, spent = spent, budget = budget)
-    }
-
 }

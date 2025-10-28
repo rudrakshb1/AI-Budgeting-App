@@ -3,13 +3,10 @@ package com.example.aibudgetapp.ui.screens.budget
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import java.time.LocalDate
 import com.example.aibudgetapp.ui.screens.transaction.Transaction
 import androidx.lifecycle.ViewModelProvider
-
 
 class BudgetViewModel(
     private val repository: BudgetRepository
@@ -191,7 +188,6 @@ class BudgetViewModel(
                 "Remaining" to remaining.toFloat())
         }
     }
-
 
     class Factory(
         private val repository: BudgetRepository

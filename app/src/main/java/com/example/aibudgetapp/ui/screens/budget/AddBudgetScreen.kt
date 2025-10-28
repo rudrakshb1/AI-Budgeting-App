@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import com.example.aibudgetapp.constants.CategoryType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import kotlin.math.floor
 import kotlin.math.max
