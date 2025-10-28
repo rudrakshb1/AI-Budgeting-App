@@ -37,8 +37,8 @@ fun FaqScreen(onBack: () -> Unit = {}) {
                 answer = "Tap the '+' button on your dashboard, then enter the transaction details."
             )
             FaqItem(
-                question = "How can I edit or delete a transaction?",
-                answer = "Go to your transaction history, select the transaction, and tap 'Edit' or 'Delete'."
+                question = "How can I edit or delete a budget?",
+                answer = "Go to your Budget Overview, select the budget, and tap 'Edit' or 'Delete'."
             )
             FaqItem(
                 question = "How do I set up a budget?",
