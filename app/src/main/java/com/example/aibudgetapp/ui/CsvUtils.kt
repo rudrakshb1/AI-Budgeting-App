@@ -20,8 +20,9 @@ fun parseCsv(context: Context, uri: Uri): List<Transaction> {
     var headerLine: String? = null
     while (true) {
         val line = reader.readLine() ?: break
-        if (line.contains("Date", ignoreCase = true)) {
+        if (line.contains("Date")) {
             headerLine = line
+            Log.d("CSVUtil", headerLine)
             break
         }
     }
@@ -39,6 +40,8 @@ fun parseCsv(context: Context, uri: Uri): List<Transaction> {
     val payeeCol   = findIndex("payee")
     val particularsCol = findIndex("particulars")
     val codeCol    = findIndex("code")
+    val memoCol = findIndex("memo")
+
 
     if (dateCol == -1 || amountCol == -1) return emptyList()
 
@@ -52,8 +55,10 @@ fun parseCsv(context: Context, uri: Uri): List<Transaction> {
         val payee = if (payeeCol != -1) cols.getOrNull(payeeCol)?.trim().orEmpty() else ""
         val particulars = if (particularsCol != -1) cols.getOrNull(particularsCol)?.trim().orEmpty() else ""
         val code = if (codeCol != -1) cols.getOrNull(codeCol)?.trim().orEmpty() else ""
+        val memo = if (memoCol != -1) cols.getOrNull(memoCol)?.trim().orEmpty() else ""
 
-        val category = listOf(payee, details, particulars, code)
+        Log.d("CSVUtil", date)
+        val category = listOf(payee, details, particulars, code, memo)
             .firstNotNullOfOrNull { text ->
                 findCategory(text).takeIf { it != "Other" }
             } ?: "Other"
