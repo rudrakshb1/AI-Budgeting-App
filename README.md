@@ -45,11 +45,11 @@ Select a device/emulator (API 24+ recommended).
 5. Verify chatbot connection
 - Open the app → go to Chatbot tab
 - Type /ping
-- You should see response: OK
+- You should see response: OK (this means the chatbot is connected successfully)
 
-## 📂 Sample Data for Testing
+## 📂 Sample Data provided for Testing
 Located in 'samples/' folder:
-- receipt1.jpg, receipt2.jpg → OCR testing
+- receipt1.png, receipt2.jpg, receipt3.jpg → OCR testing
 - transactions_asb.csv, transactions_anz.csv → CSV import
 
 ### Using in Android Emulator:
